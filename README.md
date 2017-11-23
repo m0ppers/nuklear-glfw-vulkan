@@ -14,7 +14,7 @@ requires C99 instead of C89).
 The example code is a slighly modified version of the excellent
 https://www.vulkan-tutorial.com and will require a C++ compiler.
 
-A Vulkan capable graphics card (obviously).
+The Vulkan SDK and a Vulkan capable graphics card (obviously).
 
 `xxd` should be installed on mac and linux out of the box. For windows it was part of the git distribution.
 
