@@ -45,7 +45,7 @@ void init_overlay(GLFWwindow* _win, VkDevice logical_device, VkPhysicalDevice ph
     }
 }
 
-VkSemaphore submit_overlay(uint32_t buffer_index, VkSemaphore wait_semaphore) {
+VkSemaphore submit_overlay(uint32_t buffer_index, VkSemaphore main_finished_semaphore) {
     struct nk_color background = nk_rgb(28,48,62);
     // background = nk_rgb(28,48,62);
     // while (!glfwWindowShouldClose(win))
@@ -115,7 +115,7 @@ VkSemaphore submit_overlay(uint32_t buffer_index, VkSemaphore wait_semaphore) {
     // return 0;
     float bg[4];
     nk_color_fv(bg, background);
-    return nk_glfw3_render(NK_ANTI_ALIASING_ON, buffer_index, wait_semaphore);
+    return nk_glfw3_render(NK_ANTI_ALIASING_ON, buffer_index, main_finished_semaphore);
 }
 
 void shutdown_overlay() {
