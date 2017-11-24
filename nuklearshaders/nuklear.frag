@@ -9,7 +9,5 @@ layout(location = 0) out vec4 outColor;
 
 void main() {
     vec4 texColor = texture(fontTexture, fragUv);
-    // hmmm ... don't get the alpha business here...
-    // fragColor * texColor alone does not work
-    outColor = vec4(fragColor.rgb * texColor.a, 1.0);
+    outColor = fragColor * texColor;
 }
