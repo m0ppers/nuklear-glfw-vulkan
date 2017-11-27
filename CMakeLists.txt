@@ -47,6 +47,15 @@ foreach (SHADER ${SHADERS})
     list(APPEND SHADER_HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SHADER}.h)
 endforeach()
 
+configure_file(generate-inlined-include.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/generate-inlined-include.cmake @ONLY)
+add_custom_target(release ALL
+    COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/generate-inlined-include.cmake
+    DEPENDS
+        ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders/nuklear.frag.h
+        ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders/nuklear.vert.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/nuklear-glfw-vulkan.h
+)
+
 add_executable(demo
     demo.cpp
     overlay.c

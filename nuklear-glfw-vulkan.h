@@ -39,8 +39,10 @@ NK_API void                 nk_glfw3_mouse_button_callback(GLFWwindow *win, int 
 
 #ifdef NK_GLFW_VULKAN_IMPLEMENTATION
 
+// ${NUKLEAR_SHADERS_START}
 #include "nuklearshaders/nuklear.frag.h"
 #include "nuklearshaders/nuklear.vert.h"
+// ${NUKLEAR_SHADERS_END}
 
 #ifndef NK_GLFW_TEXT_MAX
 #define NK_GLFW_TEXT_MAX 256

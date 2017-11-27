@@ -27,13 +27,14 @@ The Vulkan SDK and a Vulkan capable graphics card are obviously also required.
 
 ## TODOs
 
-- [ ] Proper buildchain that outputs a single header only file (building blocks all there)
+- [x] Proper buildchain that outputs a single header only file (building blocks all there)
 - [x] Clarify where external requirements should be placed (glfw, nuklear)
 - [x] Fix wacky input
 - [x] Use correct blending (currently somewhat off)
 - [ ] implement resize
 - [ ] check performance
 - [ ] cross platform tests
+- [ ] proper example (incl. interaction)
 
 ## Acknowledgements
 

@@ -1,7 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
 #include <string.h>
-#include "nuklear-vulkan-glfw.h"
+#include "nuklear-glfw-vulkan.h"
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
