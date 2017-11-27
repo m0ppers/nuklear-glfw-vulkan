@@ -1,6 +1,6 @@
-# nuklear-vulkan
+# nuklear-glfw-vulkan
 
-A WIP adapter to make nuklear play with vulkan
+A WIP adapter to make nuklear play with vulkan and glfw
 
 ![screenshot](http://m0ppers.github.io/nuklear-vulkan.png)
 
