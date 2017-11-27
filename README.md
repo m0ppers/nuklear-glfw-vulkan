@@ -21,15 +21,13 @@ The Vulkan SDK and a Vulkan capable graphics card (obviously).
 ## Building
 
 - Clone repo
-- Place a `glfw-3.2.1` distribution into the dir
-- Place the `nuklear` distribution into the dir
 - Configure the project with CMake
 - build
 
 ## TODOs
 
 - [ ] Proper buildchain that outputs a single header only file (building blocks all there)
-- [ ] Clarify where external requirements should be placed (glfw, nuklear)
+- [x] Clarify where external requirements should be placed (glfw, nuklear)
 - [x] Fix wacky input
 - [x] Use correct blending (currently somewhat off)
 - [ ] implement resize
