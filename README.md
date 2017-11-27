@@ -6,17 +6,18 @@ A WIP adapter to make nuklear play with vulkan and glfw
 
 ## Requirements
 
-C99 compiler. The code won't compile with a C++ compiler due to designated initializers.
-Not yet sure if this should be changed or not. As nuklear
-is C only this seemed appropriate (though this thing here
-requires C99 instead of C89).
+The implementation itself has been done using C99 so far. It is using
+designated initializers which are not supported by C++ compilers.
+This is subject to change in a later version.
 
-The example code is a slighly modified version of the excellent
-https://www.vulkan-tutorial.com and will require a C++ compiler.
+As a result the example overlay only compiles using a C99 compiler.
 
-The Vulkan SDK and a Vulkan capable graphics card (obviously).
+The background however is a slighly modified version of the
+excellent https://www.vulkan-tutorial.com and will require a C++ compiler.
 
-`xxd` should be installed on mac and linux out of the box. For windows it was part of the git distribution.
+The Vulkan SDK and a Vulkan capable graphics card are obviously also required.
+
+`xxd` should be installed on linux out of the box. For windows it was part of the git distribution.
 
 ## Building
 
