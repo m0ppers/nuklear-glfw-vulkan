@@ -19,9 +19,9 @@ struct nk_context *ctx;
 struct nk_color background;
 struct nk_font_atlas *atlas;
 
-void init_overlay(GLFWwindow* _win, VkDevice logical_device, VkPhysicalDevice physical_device, VkQueue graphics_queue, uint32_t graphics_queue_index, VkFramebuffer* framebuffers, uint32_t framebuffers_len, uint32_t framebuffer_width, uint32_t framebuffer_height, VkFormat color_format, VkFormat depth_format) {
+void init_overlay(GLFWwindow* _win, VkDevice logical_device, VkPhysicalDevice physical_device, VkQueue graphics_queue, uint32_t graphics_queue_index, VkFramebuffer* framebuffers, uint32_t framebuffers_len, VkFormat color_format, VkFormat depth_format) {
     win = _win;
-    ctx = nk_glfw3_init(win, logical_device, physical_device, graphics_queue, graphics_queue_index, framebuffers, framebuffers_len, framebuffer_width, framebuffer_height, color_format, depth_format, NK_GLFW3_INSTALL_CALLBACKS);
+    ctx = nk_glfw3_init(win, logical_device, physical_device, graphics_queue, graphics_queue_index, framebuffers, framebuffers_len, color_format, depth_format, NK_GLFW3_INSTALL_CALLBACKS);
     // /* Load Fonts: if none of these are loaded a default font will be used  */
     // /* Load Cursor: if you uncomment cursor loading please hide the cursor */
     {

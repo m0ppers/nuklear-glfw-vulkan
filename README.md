@@ -31,10 +31,12 @@ The Vulkan SDK and a Vulkan capable graphics card are obviously also required.
 - [x] Clarify where external requirements should be placed (glfw, nuklear)
 - [x] Fix wacky input
 - [x] Use correct blending (currently somewhat off)
-- [ ] implement resize
+- [x] implement resize
 - [ ] check performance
 - [ ] cross platform tests
 - [ ] proper example (incl. interaction)
+- [ ] dynamic scissor
+- [ ] implement test to check if released header works
 
 ## Acknowledgements
 

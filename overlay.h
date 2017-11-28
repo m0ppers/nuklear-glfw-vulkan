@@ -15,11 +15,11 @@ void init_overlay(
     uint32_t graphics_queue_index,
     VkFramebuffer* framebuffers,
     uint32_t framebuffers_len,
-    uint32_t framebuffer_width,
-    uint32_t framebuffer_height,
     VkFormat color_format,
     VkFormat depth_format
 );
+
+void resize_overlay(uint32_t framebuffer_width, uint32_t framebuffer_height);
 
 // buffer index is the framebuffer index that is to be rendered to
 // use the render finished semaphore of the main program so that

@@ -131,7 +131,7 @@ private:
 
         QueueFamilyIndices queueFamilyIndices = findQueueFamilies(physicalDevice);
 
-        init_overlay(window, device, physicalDevice, graphicsQueue, (uint32_t) queueFamilyIndices.graphicsFamily, swapChainFramebuffers.data(), (uint32_t) swapChainFramebuffers.size(), swapChainExtent.width, swapChainExtent.height, swapChainImageFormat, swapChainImageFormat);
+        init_overlay(window, device, physicalDevice, graphicsQueue, (uint32_t) queueFamilyIndices.graphicsFamily, swapChainFramebuffers.data(), (uint32_t) swapChainFramebuffers.size(), swapChainImageFormat, swapChainImageFormat);
     }
 
     void mainLoop() {
