@@ -27,7 +27,7 @@ The Vulkan SDK and a Vulkan capable graphics card are obviously also required.
 
 ## Generating release header
 
-- Windows
+### Windows
 
 Assuming your build directory is `build`
 
@@ -35,7 +35,7 @@ Assuming your build directory is `build`
 cmake --build .\build\ --config Debug --target release
 ```
 
-- Linux
+### Linux
 
 Assuming your build directory is `build` (untested as of now)
 
