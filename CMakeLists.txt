@@ -48,12 +48,26 @@ foreach (SHADER ${SHADERS})
 endforeach()
 
 configure_file(generate-inlined-include.cmake.in ${CMAKE_CURRENT_BINARY_DIR}/generate-inlined-include.cmake @ONLY)
-add_custom_target(release ALL
+add_custom_target(release_header
     COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/generate-inlined-include.cmake
     DEPENDS
         ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders/nuklear.frag.h
         ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders/nuklear.vert.h
         ${CMAKE_CURRENT_SOURCE_DIR}/nuklear-glfw-vulkan.h
+    OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/release/nuklear-glfw-vulkan.h
+)
+
+file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/release/test.c" "#include \"nuklear-glfw-vulkan.h\"\nint main() { return 0;}")
+add_library(release
+    EXCLUDE_FROM_ALL
+    ${CMAKE_CURRENT_BINARY_DIR}/release/test.c
+)
+add_dependencies(release release_header)
+target_include_directories(release PRIVATE
+    ${CMAKE_CURRENT_BINARY_DIR}/release
+    nuklear
+    glfw-3.2.1/include
+    ${VULKAN_INCLUDE_DIR}
 )
 
 add_executable(demo

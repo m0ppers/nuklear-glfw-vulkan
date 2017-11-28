@@ -123,7 +123,7 @@ VkPipelineShaderStageCreateInfo create_shader(struct nk_vulkan_adapter* adapter,
         .codeSize = size,
         .pCode = (const uint32_t*) spv_shader,
     };
-    VkShaderModule module;
+    VkShaderModule module = VK_NULL_HANDLE;
     assert(vkCreateShaderModule(adapter->logical_device, &create_info, NULL, &module) == VK_SUCCESS);
 
     VkPipelineShaderStageCreateInfo shader_info = {
@@ -662,7 +662,7 @@ nk_glfw3_device_upload_atlas(const void *image, int width, int height)
     assert(vkAllocateMemory(adapter->logical_device, &alloc_info, VK_NULL_HANDLE, &staging_buffer.memory) == VK_SUCCESS);
     assert(vkBindBufferMemory(adapter->logical_device, staging_buffer.buffer, staging_buffer.memory, 0) == VK_SUCCESS);
 
-    uint8_t* data;
+    uint8_t* data = 0;
     assert(vkMapMemory(adapter->logical_device, staging_buffer.memory, 0, alloc_info.allocationSize, 0, (void**) &data) == VK_SUCCESS);
     memcpy(data, image, width * height * 4);
     vkUnmapMemory(adapter->logical_device, staging_buffer.memory);

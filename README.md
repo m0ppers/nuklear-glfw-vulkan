@@ -19,11 +19,35 @@ The Vulkan SDK and a Vulkan capable graphics card are obviously also required.
 
 `xxd` should be installed on linux out of the box. For windows it was part of the git distribution.
 
-## Building
+## Building the project
 
 - Clone repo
 - Configure the project with CMake
 - build
+
+## Generating release header
+
+- Windows
+
+Assuming your build directory is `build`
+
+```
+cmake --build .\build\ --config Debug --target release
+```
+
+- Linux
+
+Assuming your build directory is `build` (untested as of now)
+
+```
+(cd build && make release)
+```
+
+Afterwards there should be a `nuklear-glfw-vulkan.h` file in your `build/release` directory
+containing a standalone version which has all the shaders inlined.
+
+Please ignore any compile warnings (but report errors!). There is a simple compile check
+in place which just checks that replacing the shaders worked.
 
 ## TODOs
 
@@ -36,7 +60,7 @@ The Vulkan SDK and a Vulkan capable graphics card are obviously also required.
 - [ ] cross platform tests
 - [ ] proper example (incl. interaction)
 - [ ] dynamic scissor
-- [ ] implement test to check if released header works
+- [x] implement test to check if released header works
 
 ## Acknowledgements
 
