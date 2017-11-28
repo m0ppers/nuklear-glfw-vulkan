@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "nuklear-glfw-vulkan.h"
+#include "overlay.h"
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
@@ -45,11 +46,13 @@ void init_overlay(GLFWwindow* _win, VkDevice logical_device, VkPhysicalDevice ph
     }
 }
 
-VkSemaphore submit_overlay(uint32_t buffer_index, VkSemaphore main_finished_semaphore) {
-    struct nk_color background = nk_rgb(28,48,62);
-    // background = nk_rgb(28,48,62);
-    // while (!glfwWindowShouldClose(win))
-    // {
+VkSemaphore submit_overlay(struct overlay_settings* settings, uint32_t buffer_index, VkSemaphore main_finished_semaphore) {
+    struct nk_color background = nk_rgb(
+        (int) (settings->bg_color[0] * 255),
+        (int) (settings->bg_color[1] * 255),
+        (int) (settings->bg_color[2] * 255)
+    );
+
         /* Input */
         glfwPollEvents();
         nk_glfw3_new_frame();
@@ -59,19 +62,17 @@ VkSemaphore submit_overlay(uint32_t buffer_index, VkSemaphore main_finished_sema
             NK_WINDOW_BORDER|NK_WINDOW_MOVABLE|NK_WINDOW_SCALABLE|
             NK_WINDOW_MINIMIZABLE|NK_WINDOW_TITLE))
         {
-            enum {EASY, HARD};
-            static int op = EASY;
-            static int property = 20;
+
             nk_layout_row_static(ctx, 30, 80, 1);
             if (nk_button_label(ctx, "button"))
                 fprintf(stdout, "button pressed\n");
 
             nk_layout_row_dynamic(ctx, 30, 2);
-            if (nk_option_label(ctx, "easy", op == EASY)) op = EASY;
-            if (nk_option_label(ctx, "hard", op == HARD)) op = HARD;
+            if (nk_option_label(ctx, "up", settings->orientation == UP)) settings->orientation = UP;
+            if (nk_option_label(ctx, "down", settings->orientation == DOWN)) settings->orientation = DOWN;
 
             nk_layout_row_dynamic(ctx, 25, 1);
-            nk_property_int(ctx, "Compression:", 0, &property, 100, 10, 1);
+            nk_property_int(ctx, "Zoom:", 0, &settings->zoom, 100, 10, 1);
 
             nk_layout_row_dynamic(ctx, 20, 1);
             nk_label(ctx, "background:", NK_TEXT_LEFT);
@@ -113,8 +114,8 @@ VkSemaphore submit_overlay(uint32_t buffer_index, VkSemaphore main_finished_sema
     
     // glfwTerminate();
     // return 0;
-    float bg[4];
-    nk_color_fv(bg, background);
+    
+    nk_color_fv(settings->bg_color, background);
     return nk_glfw3_render(NK_ANTI_ALIASING_ON, buffer_index, main_finished_semaphore);
 }
 

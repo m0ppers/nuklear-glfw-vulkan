@@ -56,9 +56,9 @@ in place which just checks that replacing the shaders worked.
 - [x] Fix wacky input
 - [x] Use correct blending (currently somewhat off)
 - [x] implement resize
-- [ ] check performance
+- [x] check performance
 - [ ] cross platform tests
-- [ ] proper example (incl. interaction)
+- [x] proper example (incl. interaction)
 - [ ] dynamic scissor
 - [x] implement test to check if released header works
 

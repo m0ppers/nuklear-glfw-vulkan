@@ -66,6 +66,14 @@ struct SwapChainSupportDetails {
 
 class HelloTriangleApplication {
 public:
+    HelloTriangleApplication() :
+        settings {
+            {0.0f, 0.0f, 0.0f, 1.0f},
+            UP,
+            20
+        } {
+    }
+
     void run() {
         initWindow();
         initVulkan();
@@ -102,6 +110,8 @@ private:
 
     VkSemaphore imageAvailableSemaphore;
     VkSemaphore renderFinishedSemaphore;
+
+    overlay_settings settings;
 
     void initWindow() {
         glfwInit();
@@ -612,7 +622,12 @@ private:
             renderPassInfo.renderArea.offset = {0, 0};
             renderPassInfo.renderArea.extent = swapChainExtent;
 
-            VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+            VkClearValue clearColor = {
+                settings.bg_color[0],
+                settings.bg_color[1],
+                settings.bg_color[2],
+                settings.bg_color[3]
+            };
             renderPassInfo.clearValueCount = 1;
             renderPassInfo.pClearValues = &clearColor;
 
@@ -672,7 +687,20 @@ private:
              throw std::runtime_error("failed to submit draw command buffer!");
         }
 
-        VkSemaphore overlayFinished = submit_overlay(imageIndex, renderFinishedSemaphore);
+        float old_bg_color[4] {
+            settings.bg_color[0],
+            settings.bg_color[1],
+            settings.bg_color[2],
+            settings.bg_color[3]
+        };
+        VkSemaphore overlayFinished = submit_overlay(&settings, imageIndex, renderFinishedSemaphore);
+        if (old_bg_color[0] != settings.bg_color[0]
+            || old_bg_color[1] != settings.bg_color[1]
+            || old_bg_color[2] != settings.bg_color[2]
+            || old_bg_color[3] != settings.bg_color[3]) {
+                // update clear color
+                createCommandBuffers();
+        }
 
         VkPresentInfoKHR presentInfo = {};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
