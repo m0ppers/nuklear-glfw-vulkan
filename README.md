@@ -1,10 +1,14 @@
 # nuklear-glfw-vulkan
 
-A WIP adapter to make nuklear play with vulkan and glfw
+An adapter to make nuklear play with vulkan and glfw
 
 ![screenshot](http://m0ppers.github.io/nuklear-vulkan.png)
 
-## Requirements
+## Usage
+
+Download the latest release from the `Releases` tab.
+
+## Build requirements
 
 The implementation itself has been done using C99 so far. It is using
 designated initializers which are not supported by C++ compilers.
