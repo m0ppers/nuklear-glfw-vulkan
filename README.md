@@ -7,6 +7,7 @@ An adapter to make nuklear play with vulkan and glfw
 ## Usage
 
 Download the latest release from the `Releases` tab.
+Then check `overlay.h`/`overlay.c` to get an idea how to use it.
 
 ## Build requirements
 
