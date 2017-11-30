@@ -19,6 +19,11 @@ The Vulkan SDK and a Vulkan capable graphics card are obviously also required.
 
 `xxd` should be installed on linux out of the box. For windows it was part of the git distribution.
 
+## Compatibility
+
+- works on Windows and Linux
+- Android support in progress (input events a bit off)
+
 ## Building the project
 
 - Clone repo
@@ -57,7 +62,7 @@ in place which just checks that replacing the shaders worked.
 - [x] Use correct blending (currently somewhat off)
 - [x] implement resize
 - [x] check performance
-- [ ] cross platform tests
+- [x] cross platform tests
 - [x] proper example (incl. interaction)
 - [ ] dynamic scissor
 - [x] implement test to check if released header works

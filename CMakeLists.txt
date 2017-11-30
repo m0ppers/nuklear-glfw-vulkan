@@ -8,10 +8,9 @@ set(GLFW_BUILD_TESTS    OFF CACHE STRING "" FORCE)
 set(GLFW_INSTALL OFF CACHE STRING "" FORCE)
 
 add_subdirectory(glfw-3.2.1)
-
 find_program(GLSL_VALIDATOR
     glslangValidator
-    PATHS ${ENV.VULKAN_SDK}/Bin
+    PATHS $ENV{VULKAN_SDK}/bin
 )
 if (NOT GLSL_VALIDATOR)
     message(FATAL_ERROR "glsllangValidator executable not found! make sure that the environment defines VULKAN_SDK correctly")
@@ -23,6 +22,8 @@ find_program(XXD
 if (NOT XXD)
     message(FATAL_ERROR "xxd executable not found! On windows this is part of the GIT distribution")
 endif()
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demoshaders)
+file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders)
 
 set(SHADERS
     demoshaders/demo.frag
@@ -54,7 +55,6 @@ add_custom_target(release_header
         ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders/nuklear.frag.h
         ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders/nuklear.vert.h
         ${CMAKE_CURRENT_SOURCE_DIR}/nuklear-glfw-vulkan.h
-    OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/release/nuklear-glfw-vulkan.h
 )
 
 file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/release/test.c" "#include \"nuklear-glfw-vulkan.h\"\nint main() { return 0;}")
