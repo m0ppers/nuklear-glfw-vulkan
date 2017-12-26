@@ -1007,8 +1007,8 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index, VkS
 
             VkRect2D scissor = {
                 .extent = {
-                .width = cmd->clip_rect.w * glfw.fb_scale.x,
-                .height = cmd->clip_rect.h * glfw.fb_scale.y,
+                    .width = cmd->clip_rect.w * glfw.fb_scale.x,
+                    .height = cmd->clip_rect.h * glfw.fb_scale.y,
                 },
                 .offset = {
                     .x = max(cmd->clip_rect.x * glfw.fb_scale.x, 0),
