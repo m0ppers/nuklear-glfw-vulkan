@@ -69,8 +69,9 @@ in place which just checks that replacing the shaders worked.
 - [x] check performance
 - [x] cross platform tests
 - [x] proper example (incl. interaction)
-- [ ] dynamic scissor
+- [x] dynamic scissor
 - [x] implement test to check if released header works
+- [ ] implement way to specify attachments (the code right now assumes that there is only one attachment and that this is the color attachment)
 
 ## Acknowledgements
 
