@@ -1005,15 +1005,14 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index, VkS
         {
             if (!cmd->elem_count) continue;
 
-            // todo dynamic scissor
             VkRect2D scissor = {
                 .extent = {
-                    .width = glfw.width,
-                    .height = glfw.height,
+                .width = cmd->clip_rect.w * glfw.fb_scale.x,
+                .height = cmd->clip_rect.h * glfw.fb_scale.y,
                 },
                 .offset = {
-                    .x = 0,
-                    .y = 0,
+                    .x = max(cmd->clip_rect.x * glfw.fb_scale.x, 0),
+                    .y = max(cmd->clip_rect.y * glfw.fb_scale.y, 0),
                 }
             };
             vkCmdSetScissor(command_buffer, 0, 1, &scissor);
