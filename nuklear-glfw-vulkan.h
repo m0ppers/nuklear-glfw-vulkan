@@ -397,7 +397,7 @@ void prepare_render_pass(struct nk_vulkan_adapter *adapter) {
   VkAttachmentDescription attachments[1] = {
       {.format = adapter->color_format,
        .samples = VK_SAMPLE_COUNT_1_BIT,
-       .loadOp = VK_ATTACHMENT_LOAD_OP_LOAD,
+       .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
