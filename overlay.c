@@ -61,9 +61,8 @@ void init_overlay(GLFWwindow *_win, VkDevice logical_device,
 VkSemaphore submit_overlay(struct overlay_settings *settings,
                            uint32_t buffer_index,
                            VkSemaphore main_finished_semaphore) {
-  struct nk_color background = nk_rgb((int)(settings->bg_color[0] * 255),
-                                      (int)(settings->bg_color[1] * 255),
-                                      (int)(settings->bg_color[2] * 255));
+  struct nk_colorf background = {settings->bg_color[0], settings->bg_color[1],
+                                 settings->bg_color[2], settings->bg_color[3]};
 
   /* Input */
   glfwPollEvents();
@@ -90,19 +89,11 @@ VkSemaphore submit_overlay(struct overlay_settings *settings,
     nk_layout_row_dynamic(ctx, 20, 1);
     nk_label(ctx, "background:", NK_TEXT_LEFT);
     nk_layout_row_dynamic(ctx, 25, 1);
-    if (nk_combo_begin_color(ctx, background,
+    if (nk_combo_begin_color(ctx, nk_rgb_cf(background),
                              nk_vec2(nk_widget_width(ctx), 400))) {
       nk_layout_row_dynamic(ctx, 120, 1);
       background = nk_color_picker(ctx, background, NK_RGBA);
       nk_layout_row_dynamic(ctx, 25, 1);
-      background.r =
-          (nk_byte)nk_propertyi(ctx, "#R:", 0, background.r, 255, 1, 1);
-      background.g =
-          (nk_byte)nk_propertyi(ctx, "#G:", 0, background.g, 255, 1, 1);
-      background.b =
-          (nk_byte)nk_propertyi(ctx, "#B:", 0, background.b, 255, 1, 1);
-      background.a =
-          (nk_byte)nk_propertyi(ctx, "#A:", 0, background.a, 255, 1, 1);
       nk_combo_end(ctx);
     }
   }
@@ -134,7 +125,10 @@ VkSemaphore submit_overlay(struct overlay_settings *settings,
   // glfwTerminate();
   // return 0;
 
-  nk_color_fv(settings->bg_color, background);
+  settings->bg_color[0] = background.r;
+  settings->bg_color[1] = background.g;
+  settings->bg_color[2] = background.b;
+  settings->bg_color[3] = background.a;
   return nk_glfw3_render(NK_ANTI_ALIASING_ON, buffer_index,
                          main_finished_semaphore);
 }
