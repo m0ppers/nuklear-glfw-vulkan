@@ -1,5 +1,10 @@
 #define _CRT_SECURE_NO_WARNINGS 1
 
+#define UNUSED(a) (void)a
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#define MAX(a, b) ((a) < (b) ? (b) : (a))
+#define LEN(a) (sizeof(a) / sizeof(a)[0])
+
 #include "overlay.h"
 #include "nuklear-glfw-vulkan.h"
 #include <string.h>
@@ -9,11 +14,6 @@
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
-
-#define UNUSED(a) (void)a
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) < (b) ? (b) : (a))
-#define LEN(a) (sizeof(a) / sizeof(a)[0])
 
 GLFWwindow *win;
 struct nk_context *ctx;

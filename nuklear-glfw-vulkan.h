@@ -16,6 +16,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "string.h"
+
 enum nk_glfw_init_state { NK_GLFW3_DEFAULT = 0, NK_GLFW3_INSTALL_CALLBACKS };
 
 NK_API struct nk_context *
@@ -1097,8 +1099,8 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
                                   .height = cmd->clip_rect.h * glfw.fb_scale.y,
                               },
                           .offset = {
-                              .x = max(cmd->clip_rect.x * glfw.fb_scale.x, 0),
-                              .y = max(cmd->clip_rect.y * glfw.fb_scale.y, 0),
+                              .x = MAX(cmd->clip_rect.x * glfw.fb_scale.x, 0),
+                              .y = MAX(cmd->clip_rect.y * glfw.fb_scale.y, 0),
                           }};
       vkCmdSetScissor(command_buffer, 0, 1, &scissor);
       vkCmdDrawIndexed(command_buffer, cmd->elem_count, 1, index_offset, 0, 0);
