@@ -1082,7 +1082,8 @@ private:
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
       throw std::runtime_error("failed to acquire swap chain image!");
     }
-
+    float old_bg_color[4]{settings.bg_color[0], settings.bg_color[1],
+                          settings.bg_color[2], settings.bg_color[3]};
     VkSemaphore overlayFinished =
         submit_overlay(&settings, graphicsQueue, imageIndex, nullptr);
 
@@ -1108,9 +1109,6 @@ private:
         VK_SUCCESS) {
       throw std::runtime_error("failed to submit draw command buffer!");
     }
-
-    float old_bg_color[4]{settings.bg_color[0], settings.bg_color[1],
-                          settings.bg_color[2], settings.bg_color[3]};
 
     if (old_bg_color[0] != settings.bg_color[0] ||
         old_bg_color[1] != settings.bg_color[1] ||
