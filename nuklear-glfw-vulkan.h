@@ -22,25 +22,27 @@ enum nk_glfw_init_state { NK_GLFW3_DEFAULT = 0, NK_GLFW3_INSTALL_CALLBACKS };
 
 NK_API struct nk_context *
 nk_glfw3_init(GLFWwindow *win, VkDevice logical_device,
-              VkPhysicalDevice physical_device, VkQueue graphics_queue,
-              uint32_t graphics_queue_index, VkFramebuffer *framebuffers,
-              uint32_t framebuffers_len, VkFormat color_format,
-              VkFormat depth_format, enum nk_glfw_init_state);
-NK_API void nk_glfw3_shutdown(void);
+              VkPhysicalDevice physical_device,
+              uint32_t graphics_queue_family_index, VkImageView *image_views,
+              uint32_t image_views_len, uint32_t width, uint32_t height,
+              VkFormat color_format, enum nk_glfw_init_state init_state);
+NK_API void nk_glfw3_resize(uint32_t width, uint32_t height);
+NK_API void nk_glfw3_shutdown();
 NK_API void nk_glfw3_font_stash_begin(struct nk_font_atlas **atlas);
-NK_API void nk_glfw3_font_stash_end(void);
+NK_API void nk_glfw3_font_stash_end(VkQueue graphics_queue);
 NK_API void nk_glfw3_new_frame();
 NK_API VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA,
+                                   VkQueue graphics_queue,
                                    uint32_t buffer_index,
                                    VkSemaphore wait_semaphore);
 
 NK_API void nk_glfw3_device_destroy(void);
-NK_API void nk_glfw3_device_create(VkDevice, VkPhysicalDevice,
-                                   VkQueue graphics_queue,
-                                   uint32_t graphics_queue_index,
-                                   VkFramebuffer *framebuffers,
-                                   uint32_t framebuffers_len, VkFormat,
-                                   VkFormat);
+NK_API void nk_glfw3_device_create(VkDevice logical_device,
+                                   VkPhysicalDevice physical_device,
+                                   uint32_t graphics_queue_family_index,
+                                   VkImageView *image_views,
+                                   uint32_t image_views_len, uint32_t width,
+                                   uint32_t height, VkFormat color_format);
 
 NK_API void nk_glfw3_char_callback(GLFWwindow *win, unsigned int codepoint);
 NK_API void nk_gflw3_scroll_callback(GLFWwindow *win, double xoff, double yoff);
@@ -82,12 +84,14 @@ struct nk_vulkan_adapter {
   struct nk_draw_null_texture null;
   VkDevice logical_device;
   VkPhysicalDevice physical_device;
-  VkQueue graphics_queue;
-  uint32_t graphics_queue_index;
+  VkCommandPool command_pool;
+  VkImageView *image_views;
+  uint32_t image_views_len;
+  uint32_t width;
+  uint32_t height;
+  VkFormat color_format;
   VkFramebuffer *framebuffers;
   uint32_t framebuffers_len;
-  VkFormat color_format;
-  VkFormat depth_format;
   VkSemaphore render_completed;
   VkSampler font_tex;
   VkImage font_image;
@@ -102,8 +106,8 @@ struct nk_vulkan_adapter {
   VkDeviceMemory index_memory;
   VkBuffer uniform_buffer;
   VkDeviceMemory uniform_memory;
-  VkCommandPool command_pool;
-  VkCommandBuffer *command_buffers; // currently always length 1
+  VkCommandBuffer *command_buffers;
+  uint32_t command_buffers_len;
   VkDescriptorPool descriptor_pool;
   VkDescriptorSetLayout descriptor_set_layout;
   VkDescriptorSet descriptor_set;
@@ -215,6 +219,26 @@ void prepare_descriptor_set(struct nk_vulkan_adapter *adapter) {
                                   &adapter->descriptor_set) == VK_SUCCESS);
 }
 
+void write_font_descriptor_set(struct nk_vulkan_adapter *adapter) {
+  VkDescriptorImageInfo descriptor_image_info = {
+      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+      .imageView = adapter->font_image_view,
+      .sampler = adapter->font_tex,
+  };
+
+  VkWriteDescriptorSet descriptor_write = {};
+  descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  descriptor_write.dstSet = adapter->descriptor_set;
+  descriptor_write.dstBinding = 1;
+  descriptor_write.dstArrayElement = 0;
+  descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  descriptor_write.descriptorCount = 1;
+  descriptor_write.pImageInfo = &descriptor_image_info;
+
+  vkUpdateDescriptorSets(adapter->logical_device, 1, &descriptor_write, 0,
+                         VK_NULL_HANDLE);
+}
+
 void update_write_descriptor_sets(struct nk_vulkan_adapter *adapter) {
   VkDescriptorBufferInfo buffer_info = {
       .buffer = adapter->uniform_buffer,
@@ -228,31 +252,20 @@ void update_write_descriptor_sets(struct nk_vulkan_adapter *adapter) {
       .sampler = adapter->font_tex,
   };
 
-  VkWriteDescriptorSet descriptor_writes[2];
-  memset(descriptor_writes, 0, sizeof(VkWriteDescriptorSet) * 2);
-  descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-  descriptor_writes[0].dstSet = adapter->descriptor_set;
-  descriptor_writes[0].dstBinding = 0;
-  descriptor_writes[0].dstArrayElement = 0;
-  descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  descriptor_writes[0].descriptorCount = 1;
-  descriptor_writes[0].pBufferInfo = &buffer_info;
+  VkWriteDescriptorSet descriptor_write = {};
+  descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  descriptor_write.dstSet = adapter->descriptor_set;
+  descriptor_write.dstBinding = 0;
+  descriptor_write.dstArrayElement = 0;
+  descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+  descriptor_write.descriptorCount = 1;
+  descriptor_write.pBufferInfo = &buffer_info;
 
-  uint32_t descriptor_write_count = 1;
+  vkUpdateDescriptorSets(adapter->logical_device, 1, &descriptor_write, 0,
+                         VK_NULL_HANDLE);
   if (adapter->font_tex != VK_NULL_HANDLE) {
-    descriptor_write_count++;
-    descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    descriptor_writes[1].dstSet = adapter->descriptor_set;
-    descriptor_writes[1].dstBinding = 1;
-    descriptor_writes[1].dstArrayElement = 0;
-    descriptor_writes[1].descriptorType =
-        VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    descriptor_writes[1].descriptorCount = 1;
-    descriptor_writes[1].pImageInfo = &image_info;
+    write_font_descriptor_set(adapter);
   }
-
-  vkUpdateDescriptorSets(adapter->logical_device, descriptor_write_count,
-                         descriptor_writes, 0, VK_NULL_HANDLE);
 }
 
 void prepare_pipeline_layout(struct nk_vulkan_adapter *adapter) {
@@ -294,12 +307,6 @@ void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
       .attachmentCount = 1,
       .pAttachments = &attachment_state};
-
-  VkPipelineDepthStencilStateCreateInfo depth_stencil_state = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-      .depthTestEnable = VK_TRUE,
-      .depthWriteEnable = VK_TRUE,
-      .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL};
 
   VkPipelineViewportStateCreateInfo viewport_state = {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
@@ -373,7 +380,6 @@ void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
       .pViewportState = &viewport_state,
       .pRasterizationState = &rasterization_state,
       .pMultisampleState = &multisample_state,
-      .pDepthStencilState = &depth_stencil_state,
       .pColorBlendState = &color_blend_state,
       .pDynamicState = &dynamic_state,
       .layout = adapter->pipeline_layout,
@@ -397,12 +403,12 @@ void prepare_render_pass(struct nk_vulkan_adapter *adapter) {
   VkAttachmentDescription attachments[1] = {
       {.format = adapter->color_format,
        .samples = VK_SAMPLE_COUNT_1_BIT,
-       .loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+       .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
        .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
        .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-       .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR},
+       .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
   };
 
   VkAttachmentReference color_reference = {
@@ -448,16 +454,28 @@ void prepare_render_pass(struct nk_vulkan_adapter *adapter) {
                             &adapter->render_pass) == VK_SUCCESS);
 }
 
+void prepare_framebuffers(struct nk_vulkan_adapter *adapter) {
+  adapter->framebuffers =
+      malloc(adapter->image_views_len * sizeof(VkFramebuffer));
+
+  size_t i;
+  for (i = 0; i < adapter->image_views_len; i++) {
+    VkFramebufferCreateInfo framebufferCreateInfo = {};
+    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferCreateInfo.renderPass = adapter->render_pass;
+    framebufferCreateInfo.attachmentCount = 1;
+    framebufferCreateInfo.pAttachments = &adapter->image_views[i];
+    framebufferCreateInfo.width = adapter->width;
+    framebufferCreateInfo.height = adapter->height;
+    framebufferCreateInfo.layers = 1;
+
+    assert(vkCreateFramebuffer(adapter->logical_device, &framebufferCreateInfo,
+                               NULL, &adapter->framebuffers[i]) == VK_SUCCESS);
+  }
+  adapter->framebuffers_len = adapter->image_views_len;
+}
+
 void prepare_command_buffers(struct nk_vulkan_adapter *adapter) {
-  VkCommandPoolCreateInfo command_pool = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-      .queueFamilyIndex = adapter->graphics_queue_index,
-      .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-  };
-
-  assert(vkCreateCommandPool(adapter->logical_device, &command_pool, NULL,
-                             &adapter->command_pool) == VK_SUCCESS);
-
   VkCommandBufferAllocateInfo allocate_info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
       .commandPool = adapter->command_pool,
@@ -467,6 +485,7 @@ void prepare_command_buffers(struct nk_vulkan_adapter *adapter) {
 
   assert(vkAllocateCommandBuffers(adapter->logical_device, &allocate_info,
                                   adapter->command_buffers) == VK_SUCCESS);
+  adapter->command_buffers_len = 1;
 }
 
 void prepare_semaphores(struct nk_vulkan_adapter *adapter) {
@@ -484,7 +503,8 @@ uint32_t find_memory_index(VkPhysicalDevice physical_device,
   VkPhysicalDeviceMemoryProperties mem_properties;
   vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_properties);
 
-  for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) {
+  uint32_t i;
+  for (i = 0; i < mem_properties.memoryTypeCount; i++) {
     if ((typeFilter & (1 << i)) &&
         (mem_properties.memoryTypes[i].propertyFlags & properties) ==
             properties) {
@@ -527,26 +547,68 @@ void create_buffer_and_memory(struct nk_vulkan_adapter *adapter,
          VK_SUCCESS);
 }
 
-NK_API void
-nk_glfw3_device_create(VkDevice logical_device,
-                       VkPhysicalDevice physical_device, VkQueue graphics_queue,
-                       uint32_t graphics_queue_index,
-                       VkFramebuffer *framebuffers, uint32_t framebuffers_len,
-                       VkFormat color_format, VkFormat depth_format) {
+void create_render_resources(struct nk_vulkan_adapter *adapter) {
+  prepare_render_pass(adapter);
+  prepare_framebuffers(adapter);
+
+  prepare_descriptor_pool(adapter);
+  prepare_descriptor_set_layout(adapter);
+  prepare_descriptor_set(adapter);
+  update_write_descriptor_sets(adapter);
+  prepare_pipeline_layout(adapter);
+  prepare_pipeline(adapter);
+}
+
+void cleanup_render_resources(struct nk_vulkan_adapter *adapter) {
+  vkDestroyPipeline(adapter->logical_device, adapter->pipeline, VK_NULL_HANDLE);
+  vkDestroyPipelineLayout(adapter->logical_device, adapter->pipeline_layout,
+                          VK_NULL_HANDLE);
+  vkDestroyDescriptorSetLayout(adapter->logical_device,
+                               adapter->descriptor_set_layout, VK_NULL_HANDLE);
+  vkDestroyDescriptorPool(adapter->logical_device, adapter->descriptor_pool,
+                          VK_NULL_HANDLE);
+  size_t i;
+  for (i = 0; i < adapter->framebuffers_len; i++) {
+    vkDestroyFramebuffer(adapter->logical_device, adapter->framebuffers[i],
+                         VK_NULL_HANDLE);
+  }
+  free(adapter->framebuffers);
+  adapter->framebuffers_len = 0;
+  vkDestroyRenderPass(adapter->logical_device, adapter->render_pass,
+                      VK_NULL_HANDLE);
+}
+
+void create_command_pool(struct nk_vulkan_adapter *adapter,
+                         uint32_t graphics_queue_family_index) {
+  VkCommandPoolCreateInfo pool_info = {};
+  pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  pool_info.queueFamilyIndex = graphics_queue_family_index;
+  pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  assert(vkCreateCommandPool(adapter->logical_device, &pool_info,
+                             VK_NULL_HANDLE,
+                             &adapter->command_pool) == VK_SUCCESS);
+}
+
+NK_API void nk_glfw3_device_create(VkDevice logical_device,
+                                   VkPhysicalDevice physical_device,
+                                   uint32_t graphics_queue_family_index,
+                                   VkImageView *image_views,
+                                   uint32_t image_views_len, uint32_t width,
+                                   uint32_t height, VkFormat color_format) {
   struct nk_vulkan_adapter *adapter = &glfw.adapter;
   nk_buffer_init_default(&adapter->cmds);
   adapter->logical_device = logical_device;
   adapter->physical_device = physical_device;
-  adapter->graphics_queue = graphics_queue,
-  adapter->graphics_queue_index = graphics_queue_index;
-  adapter->framebuffers = framebuffers;
-  adapter->framebuffers_len = framebuffers_len;
+  adapter->image_views = image_views;
+  adapter->image_views_len = image_views_len;
+  adapter->width = width;
+  adapter->height = height;
   adapter->color_format = color_format;
-  adapter->depth_format = depth_format;
-  adapter->command_buffers = malloc(framebuffers_len * sizeof(VkCommandBuffer));
+  adapter->framebuffers = NULL;
+  adapter->framebuffers_len = 0;
+  adapter->command_buffers = malloc(image_views_len * sizeof(VkCommandBuffer));
 
   prepare_semaphores(adapter);
-  prepare_render_pass(adapter);
 
   create_buffer_and_memory(adapter, &adapter->vertex_buffer,
                            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
@@ -558,12 +620,9 @@ nk_glfw3_device_create(VkDevice logical_device,
                            VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
                            &adapter->uniform_memory, sizeof(struct Mat4f));
 
-  prepare_descriptor_pool(adapter);
-  prepare_descriptor_set_layout(adapter);
-  prepare_descriptor_set(adapter);
-  prepare_pipeline_layout(adapter);
-  prepare_pipeline(adapter);
+  create_render_resources(adapter);
 
+  create_command_pool(adapter, graphics_queue_family_index);
   prepare_command_buffers(adapter);
 }
 
@@ -629,10 +688,10 @@ NK_INTERN void nk_glfw3_clipbard_copy(nk_handle usr, const char *text,
 
 NK_API struct nk_context *
 nk_glfw3_init(GLFWwindow *win, VkDevice logical_device,
-              VkPhysicalDevice physical_device, VkQueue graphics_queue,
-              uint32_t graphics_queue_index, VkFramebuffer *framebuffers,
-              uint32_t framebuffers_len, VkFormat color_format,
-              VkFormat depth_format, enum nk_glfw_init_state init_state) {
+              VkPhysicalDevice physical_device,
+              uint32_t graphics_queue_family_index, VkImageView *image_views,
+              uint32_t image_views_len, uint32_t width, uint32_t height,
+              VkFormat color_format, enum nk_glfw_init_state init_state) {
   glfw.win = win;
   if (init_state == NK_GLFW3_INSTALL_CALLBACKS) {
     glfwSetScrollCallback(win, nk_gflw3_scroll_callback);
@@ -644,9 +703,9 @@ nk_glfw3_init(GLFWwindow *win, VkDevice logical_device,
   glfw.ctx.clip.paste = nk_glfw3_clipbard_paste;
   glfw.ctx.clip.userdata = nk_handle_ptr(0);
   glfw.last_button_click = 0;
-  nk_glfw3_device_create(logical_device, physical_device, graphics_queue,
-                         graphics_queue_index, framebuffers, framebuffers_len,
-                         color_format, depth_format);
+  nk_glfw3_device_create(logical_device, physical_device,
+                         graphics_queue_family_index, image_views,
+                         image_views_len, width, height, color_format);
 
   glfw.is_double_click_down = nk_false;
   glfw.double_click_pos = nk_vec2(0, 0);
@@ -654,7 +713,16 @@ nk_glfw3_init(GLFWwindow *win, VkDevice logical_device,
   return &glfw.ctx;
 }
 
-NK_INTERN void nk_glfw3_device_upload_atlas(const void *image, int width,
+NK_API void nk_glfw3_resize(uint32_t width, uint32_t height) {
+  struct nk_vulkan_adapter *adapter = &glfw.adapter;
+  adapter->width = width;
+  adapter->height = height;
+  cleanup_render_resources(adapter);
+  create_render_resources(adapter);
+}
+
+NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
+                                            const void *image, int width,
                                             int height) {
   struct nk_vulkan_adapter *adapter = &glfw.adapter;
 
@@ -811,9 +879,9 @@ NK_INTERN void nk_glfw3_device_upload_atlas(const void *image, int width,
       .pCommandBuffers = &command_buffer,
   };
 
-  assert(vkQueueSubmit(adapter->graphics_queue, 1, &submitInfo,
-                       VK_NULL_HANDLE) == VK_SUCCESS);
-  assert(vkQueueWaitIdle(adapter->graphics_queue) == VK_SUCCESS);
+  assert(vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) ==
+         VK_SUCCESS);
+  assert(vkQueueWaitIdle(graphics_queue) == VK_SUCCESS);
 
   vkFreeMemory(adapter->logical_device, staging_buffer.memory, VK_NULL_HANDLE);
   vkDestroyBuffer(adapter->logical_device, staging_buffer.buffer,
@@ -850,6 +918,8 @@ NK_INTERN void nk_glfw3_device_upload_atlas(const void *image, int width,
 
   assert(vkCreateSampler(adapter->logical_device, &sampler_info, VK_NULL_HANDLE,
                          &adapter->font_tex) == VK_SUCCESS);
+
+  write_font_descriptor_set(adapter);
 }
 
 NK_API void nk_glfw3_font_stash_begin(struct nk_font_atlas **atlas) {
@@ -858,20 +928,18 @@ NK_API void nk_glfw3_font_stash_begin(struct nk_font_atlas **atlas) {
   *atlas = &glfw.atlas;
 }
 
-NK_API void nk_glfw3_font_stash_end(void) {
+NK_API void nk_glfw3_font_stash_end(VkQueue graphics_queue) {
   struct nk_vulkan_adapter *dev = &glfw.adapter;
 
   const void *image;
   int w, h;
   image = nk_font_atlas_bake(&glfw.atlas, &w, &h, NK_FONT_ATLAS_RGBA32);
-  nk_glfw3_device_upload_atlas(image, w, h);
+  nk_glfw3_device_upload_atlas(graphics_queue, image, w, h);
   nk_font_atlas_end(&glfw.atlas, nk_handle_ptr(dev->font_tex),
                     &glfw.adapter.null);
   if (glfw.atlas.default_font) {
     nk_style_set_font(&glfw.ctx, &glfw.atlas.default_font->handle);
   }
-
-  update_write_descriptor_sets(dev);
 }
 
 NK_API void nk_glfw3_new_frame() {
@@ -977,8 +1045,8 @@ NK_API void nk_glfw3_new_frame() {
 }
 
 NK_API
-VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
-                            VkSemaphore wait_semaphore) {
+VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
+                            uint32_t buffer_index, VkSemaphore wait_semaphore) {
   struct nk_vulkan_adapter *adapter = &glfw.adapter;
   struct GLFWwindow *win = glfw.win;
   struct nk_buffer vbuf, ebuf;
@@ -987,8 +1055,8 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
       .m = {2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -2.0f, 0.0f, 0.0f, 0.0f, 0.0f, -1.0f,
             0.0f, -1.0f, 1.0f, 0.0f, 1.0f},
   };
-  projection.m[0] /= glfw.width;
-  projection.m[5] /= glfw.height;
+  projection.m[0] /= adapter->width;
+  projection.m[5] /= adapter->height;
 
   void *data;
   vkMapMemory(adapter->logical_device, adapter->uniform_memory, 0,
@@ -999,6 +1067,11 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
   VkCommandBufferBeginInfo begin_info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
   };
+
+  VkClearColorValue clear_color_value = {0.0f, 0.0f, 0.0f, 0.0f};
+
+  VkClearValue clear_value = {};
+  clear_value.color = clear_color_value;
 
   VkRenderPassBeginInfo renderPassBeginInfo = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
@@ -1012,12 +1085,12 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
                   },
               .extent =
                   {
-                      .width = glfw.display_width,
-                      .height = glfw.display_height,
+                      .width = adapter->width,
+                      .height = adapter->height,
                   },
           },
-      .clearValueCount = 0,
-      .pClearValues = VK_NULL_HANDLE,
+      .clearValueCount = 1,
+      .pClearValues = &clear_value,
       .framebuffer = adapter->framebuffers[buffer_index],
   };
 
@@ -1028,8 +1101,8 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
                        VK_SUBPASS_CONTENTS_INLINE);
 
   VkViewport viewport = {
-      .width = (float)glfw.display_width,
-      .height = (float)glfw.display_height,
+      .width = (float)adapter->width,
+      .height = (float)adapter->height,
       .minDepth = 0.0f,
       .maxDepth = 1.0f,
   };
@@ -1112,6 +1185,16 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
   vkCmdEndRenderPass(command_buffer);
   assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);
 
+  uint32_t wait_semaphore_count;
+  VkSemaphore *wait_semaphores;
+  if (wait_semaphore) {
+    wait_semaphore_count = 1;
+    wait_semaphores = &wait_semaphore;
+  } else {
+    wait_semaphore_count = 0;
+    wait_semaphores = VK_NULL_HANDLE;
+  }
+
   VkPipelineStageFlags wait_stages[1] = {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   VkSubmitInfo submit_info = {
@@ -1119,24 +1202,26 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, uint32_t buffer_index,
       .commandBufferCount = 1,
       .pCommandBuffers = &command_buffer,
       .pWaitDstStageMask = wait_stages,
-      .waitSemaphoreCount = 1,
-      .pWaitSemaphores = &wait_semaphore,
+      .waitSemaphoreCount = wait_semaphore_count,
+      .pWaitSemaphores = wait_semaphores,
       .signalSemaphoreCount = 1,
       .pSignalSemaphores = &adapter->render_completed,
   };
 
-  assert(vkQueueSubmit(adapter->graphics_queue, 1, &submit_info,
-                       VK_NULL_HANDLE) == VK_SUCCESS);
-  assert(vkQueueWaitIdle(adapter->graphics_queue) == VK_SUCCESS);
+  assert(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) ==
+         VK_SUCCESS);
+  assert(vkQueueWaitIdle(graphics_queue) == VK_SUCCESS);
 
   return adapter->render_completed;
 }
 
 NK_API
-void nk_glfw3_shutdown(void) {
+void nk_glfw3_shutdown() {
   struct nk_vulkan_adapter *adapter = &glfw.adapter;
-  vkFreeCommandBuffers(adapter->logical_device, adapter->command_pool, 1,
-                       adapter->command_buffers);
+  vkFreeCommandBuffers(adapter->logical_device, adapter->command_pool,
+                       adapter->command_buffers_len, adapter->command_buffers);
+  vkDestroyCommandPool(adapter->logical_device, adapter->command_pool,
+                       VK_NULL_HANDLE);
   vkDestroySemaphore(adapter->logical_device, adapter->render_completed,
                      VK_NULL_HANDLE);
 
@@ -1158,18 +1243,7 @@ void nk_glfw3_shutdown(void) {
   vkDestroyImageView(adapter->logical_device, adapter->font_image_view,
                      VK_NULL_HANDLE);
 
-  vkDestroyPipelineLayout(adapter->logical_device, adapter->pipeline_layout,
-                          VK_NULL_HANDLE);
-  vkDestroyRenderPass(adapter->logical_device, adapter->render_pass,
-                      VK_NULL_HANDLE);
-  vkDestroyPipeline(adapter->logical_device, adapter->pipeline, VK_NULL_HANDLE);
-
-  vkDestroyDescriptorSetLayout(adapter->logical_device,
-                               adapter->descriptor_set_layout, VK_NULL_HANDLE);
-  vkDestroyDescriptorPool(adapter->logical_device, adapter->descriptor_pool,
-                          VK_NULL_HANDLE);
-  vkDestroyCommandPool(adapter->logical_device, adapter->command_pool,
-                       VK_NULL_HANDLE);
+  cleanup_render_resources(adapter);
 
   nk_font_atlas_clear(&glfw.atlas);
   nk_free(&glfw.ctx);

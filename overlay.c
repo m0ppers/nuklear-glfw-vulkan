@@ -21,14 +21,14 @@ struct nk_color background;
 struct nk_font_atlas *atlas;
 
 void init_overlay(GLFWwindow *_win, VkDevice logical_device,
-                  VkPhysicalDevice physical_device, VkQueue graphics_queue,
-                  uint32_t graphics_queue_index, VkFramebuffer *framebuffers,
-                  uint32_t framebuffers_len, VkFormat color_format,
-                  VkFormat depth_format) {
+                  VkPhysicalDevice physical_device,
+                  uint32_t graphics_queue_family_index, VkQueue graphics_queue,
+                  VkImageView *image_views, uint32_t image_views_len,
+                  uint32_t width, uint32_t height, VkFormat color_format) {
   win = _win;
-  ctx = nk_glfw3_init(win, logical_device, physical_device, graphics_queue,
-                      graphics_queue_index, framebuffers, framebuffers_len,
-                      color_format, depth_format, NK_GLFW3_INSTALL_CALLBACKS);
+  ctx = nk_glfw3_init(win, logical_device, physical_device,
+                      graphics_queue_family_index, image_views, image_views_len,
+                      width, height, color_format, NK_GLFW3_INSTALL_CALLBACKS);
   // /* Load Fonts: if none of these are loaded a default font will be used  */
   // /* Load Cursor: if you uncomment cursor loading please hide the cursor */
   {
@@ -46,7 +46,7 @@ void init_overlay(GLFWwindow *_win, VkDevice logical_device,
      * "../../../extra_font/ProggyTiny.ttf", 10, 0);*/
     /*struct nk_font *cousine = nk_font_atlas_add_from_file(atlas,
      * "../../../extra_font/Cousine-Regular.ttf", 13, 0);*/
-    nk_glfw3_font_stash_end();
+    nk_glfw3_font_stash_end(graphics_queue);
     /*nk_style_load_all_cursors(ctx, atlas->cursors);*/
     /*nk_style_set_font(ctx, &droid->handle);*/
 
@@ -57,10 +57,14 @@ void init_overlay(GLFWwindow *_win, VkDevice logical_device,
     /*set_style(ctx, THEME_DARK);*/
   }
 }
+// NK_API void ;
+void resize_overlay(uint32_t width, uint32_t height) {
+  nk_glfw3_resize(width, height);
+}
 
 VkSemaphore submit_overlay(struct overlay_settings *settings,
-                           uint32_t buffer_index,
-                           VkSemaphore main_finished_semaphore) {
+                           VkQueue graphics_queue, uint32_t buffer_index,
+                           VkSemaphore wait_semaphore) {
   struct nk_colorf background = {settings->bg_color[0], settings->bg_color[1],
                                  settings->bg_color[2], settings->bg_color[3]};
 
@@ -129,8 +133,8 @@ VkSemaphore submit_overlay(struct overlay_settings *settings,
   settings->bg_color[1] = background.g;
   settings->bg_color[2] = background.b;
   settings->bg_color[3] = background.a;
-  return nk_glfw3_render(NK_ANTI_ALIASING_ON, buffer_index,
-                         main_finished_semaphore);
+  return nk_glfw3_render(NK_ANTI_ALIASING_ON, graphics_queue, buffer_index,
+                         wait_semaphore);
 }
 
 void shutdown_overlay() { nk_glfw3_shutdown(); }

@@ -19,12 +19,12 @@ struct overlay_settings {
 
 // hmmm maybe introduce a struct for this?
 void init_overlay(GLFWwindow *_win, VkDevice logical_device,
-                  VkPhysicalDevice physical_device, VkQueue graphics_queue,
-                  uint32_t graphics_queue_index, VkFramebuffer *framebuffers,
-                  uint32_t framebuffers_len, VkFormat color_format,
-                  VkFormat depth_format);
+                  VkPhysicalDevice physical_device,
+                  uint32_t graphics_queue_family_index, VkQueue graphics_queue,
+                  VkImageView *image_views, uint32_t image_views_len,
+                  uint32_t width, uint32_t height, VkFormat color_format);
 
-void resize_overlay(uint32_t framebuffer_width, uint32_t framebuffer_height);
+void resize_overlay(uint32_t width, uint32_t height);
 
 // buffer index is the framebuffer index that is to be rendered to
 // use the render finished semaphore of the main program so that
@@ -32,8 +32,8 @@ void resize_overlay(uint32_t framebuffer_width, uint32_t framebuffer_height);
 // and then render the overlay on top. Will return a Semaphore that
 // that the main program can wait vor
 VkSemaphore submit_overlay(struct overlay_settings *settings,
-                           uint32_t buffer_index,
-                           VkSemaphore main_finished_semaphore);
+                           VkQueue graphics_queue, uint32_t buffer_index,
+                           VkSemaphore wait_semaphore);
 
 // cleanup
 void shutdown_overlay();

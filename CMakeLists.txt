@@ -1,6 +1,6 @@
 project(nuklear-vulkan C CXX)
 cmake_minimum_required(VERSION 3.1)
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 90)
 set(CMAKE_CXX_STANDARD 11)
 
 set(GLFW_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
@@ -26,8 +26,10 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/demoshaders)
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/nuklearshaders)
 
 set(SHADERS
-    demoshaders/demo.frag
-    demoshaders/demo.vert
+    demoshaders/triangle.frag
+    demoshaders/triangle.vert
+    demoshaders/overlay.frag
+    demoshaders/overlay.vert
     nuklearshaders/nuklear.frag
     nuklearshaders/nuklear.vert
 )
