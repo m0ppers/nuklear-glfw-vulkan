@@ -289,7 +289,7 @@ void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
       .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
       .polygonMode = VK_POLYGON_MODE_FILL,
       .cullMode = VK_CULL_MODE_NONE,
-      .frontFace = VK_FRONT_FACE_CLOCKWISE,
+      .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
       .lineWidth = 1.0f,
   };
 
@@ -298,8 +298,8 @@ void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
       .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
       .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
       .colorBlendOp = VK_BLEND_OP_ADD,
-      .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-      .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+      .srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+      .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
       .alphaBlendOp = VK_BLEND_OP_ADD,
       .colorWriteMask = VK_COLOR_COMPONENT_MASK_RGBA};
 
