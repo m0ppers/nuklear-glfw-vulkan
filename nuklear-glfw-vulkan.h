@@ -140,40 +140,38 @@ VkPipelineShaderStageCreateInfo create_shader(struct nk_vulkan_adapter *adapter,
                                               uint32_t size,
                                               VkShaderStageFlagBits stage_bit) {
   VkShaderModuleCreateInfo create_info = {
-      .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-      .codeSize = size,
-      .pCode = (const uint32_t *)spv_shader,
-  };
+      VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+  create_info.codeSize = size;
+  create_info.pCode = (const uint32_t *)spv_shader;
   VkShaderModule module = VK_NULL_HANDLE;
   assert(vkCreateShaderModule(adapter->logical_device, &create_info, NULL,
                               &module) == VK_SUCCESS);
 
   VkPipelineShaderStageCreateInfo shader_info = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-      .stage = stage_bit,
-      .module = module,
-      .pName = "main"};
+      VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+  shader_info.stage = stage_bit;
+  shader_info.module = module;
+  shader_info.pName = "main";
   return shader_info;
 }
 
 void prepare_descriptor_pool(struct nk_vulkan_adapter *adapter) {
   VkDescriptorPoolSize pool_sizes[2] = {
       {
-          .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-          .descriptorCount = 1,
+          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          1,
       },
       {
-          .type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-          .descriptorCount = 1,
+          VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          1,
       },
   };
 
   VkDescriptorPoolCreateInfo pool_info = {
-      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
-      .poolSizeCount = 2,
-      .pPoolSizes = pool_sizes,
-      .maxSets = 1,
-  };
+      VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+  pool_info.poolSizeCount = 2;
+  pool_info.pPoolSizes = pool_sizes;
+  pool_info.maxSets = 1;
 
   assert(vkCreateDescriptorPool(adapter->logical_device, &pool_info,
                                 VK_NULL_HANDLE,
@@ -183,24 +181,23 @@ void prepare_descriptor_pool(struct nk_vulkan_adapter *adapter) {
 void prepare_descriptor_set_layout(struct nk_vulkan_adapter *adapter) {
   VkDescriptorSetLayoutBinding bindings[2] = {
       {
-          .binding = 0,
-          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-          .descriptorCount = 1,
-          .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+          0,
+          VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          1,
+          VK_SHADER_STAGE_VERTEX_BIT,
       },
       {
-          .binding = 1,
-          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-          .descriptorCount = 1,
-          .stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT,
+          1,
+          VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          1,
+          VK_SHADER_STAGE_FRAGMENT_BIT,
       },
   };
 
   VkDescriptorSetLayoutCreateInfo descriptor_set_info = {
-      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-      .bindingCount = 2,
-      .pBindings = bindings,
-  };
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+  descriptor_set_info.bindingCount = 2;
+  descriptor_set_info.pBindings = bindings;
 
   assert(vkCreateDescriptorSetLayout(
              adapter->logical_device, &descriptor_set_info, NULL,
@@ -209,11 +206,10 @@ void prepare_descriptor_set_layout(struct nk_vulkan_adapter *adapter) {
 
 void prepare_descriptor_set(struct nk_vulkan_adapter *adapter) {
   VkDescriptorSetAllocateInfo allocate_info = {
-      .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-      .descriptorPool = adapter->descriptor_pool,
-      .descriptorSetCount = 1,
-      .pSetLayouts = &adapter->descriptor_set_layout,
-  };
+      VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+  allocate_info.descriptorPool = adapter->descriptor_pool;
+  allocate_info.descriptorSetCount = 1;
+  allocate_info.pSetLayouts = &adapter->descriptor_set_layout;
 
   assert(vkAllocateDescriptorSets(adapter->logical_device, &allocate_info,
                                   &adapter->descriptor_set) == VK_SUCCESS);
@@ -221,13 +217,13 @@ void prepare_descriptor_set(struct nk_vulkan_adapter *adapter) {
 
 void write_font_descriptor_set(struct nk_vulkan_adapter *adapter) {
   VkDescriptorImageInfo descriptor_image_info = {
-      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-      .imageView = adapter->font_image_view,
-      .sampler = adapter->font_tex,
+      adapter->font_tex,
+      adapter->font_image_view,
+      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
   };
 
-  VkWriteDescriptorSet descriptor_write = {};
-  descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  VkWriteDescriptorSet descriptor_write = {
+      VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
   descriptor_write.dstSet = adapter->descriptor_set;
   descriptor_write.dstBinding = 1;
   descriptor_write.dstArrayElement = 0;
@@ -241,19 +237,13 @@ void write_font_descriptor_set(struct nk_vulkan_adapter *adapter) {
 
 void update_write_descriptor_sets(struct nk_vulkan_adapter *adapter) {
   VkDescriptorBufferInfo buffer_info = {
-      .buffer = adapter->uniform_buffer,
-      .offset = 0,
-      .range = sizeof(struct Mat4f),
+      adapter->uniform_buffer,
+      0,
+      sizeof(struct Mat4f),
   };
 
-  VkDescriptorImageInfo image_info = {
-      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-      .imageView = adapter->font_image_view,
-      .sampler = adapter->font_tex,
-  };
-
-  VkWriteDescriptorSet descriptor_write = {};
-  descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  VkWriteDescriptorSet descriptor_write = {
+      VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
   descriptor_write.dstSet = adapter->descriptor_set;
   descriptor_write.dstBinding = 0;
   descriptor_write.dstArrayElement = 0;
@@ -270,10 +260,9 @@ void update_write_descriptor_sets(struct nk_vulkan_adapter *adapter) {
 
 void prepare_pipeline_layout(struct nk_vulkan_adapter *adapter) {
   VkPipelineLayoutCreateInfo pipeline_layout_info = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-      .setLayoutCount = 1,
-      .pSetLayouts = &adapter->descriptor_set_layout,
-  };
+      VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+  pipeline_layout_info.setLayoutCount = 1;
+  pipeline_layout_info.pSetLayouts = &adapter->descriptor_set_layout;
 
   assert(vkCreatePipelineLayout(adapter->logical_device, &pipeline_layout_info,
                                 NULL, &adapter->pipeline_layout) == VK_SUCCESS);
@@ -281,49 +270,49 @@ void prepare_pipeline_layout(struct nk_vulkan_adapter *adapter) {
 
 void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
   VkPipelineInputAssemblyStateCreateInfo input_assembly_state = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-      .primitiveRestartEnable = VK_FALSE};
+      VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
+  input_assembly_state.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+  input_assembly_state.primitiveRestartEnable = VK_FALSE;
 
   VkPipelineRasterizationStateCreateInfo rasterization_state = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-      .polygonMode = VK_POLYGON_MODE_FILL,
-      .cullMode = VK_CULL_MODE_NONE,
-      .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
-      .lineWidth = 1.0f,
-  };
+      VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
+  rasterization_state.polygonMode = VK_POLYGON_MODE_FILL;
+  rasterization_state.cullMode = VK_CULL_MODE_NONE;
+  rasterization_state.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+  rasterization_state.lineWidth = 1.0f;
 
   VkPipelineColorBlendAttachmentState attachment_state = {
-      .blendEnable = VK_TRUE,
-      .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-      .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-      .colorBlendOp = VK_BLEND_OP_ADD,
-      .srcAlphaBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-      .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-      .alphaBlendOp = VK_BLEND_OP_ADD,
-      .colorWriteMask = VK_COLOR_COMPONENT_MASK_RGBA};
+      VK_TRUE,
+      VK_BLEND_FACTOR_SRC_ALPHA,
+      VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      VK_BLEND_OP_ADD,
+      VK_BLEND_FACTOR_SRC_ALPHA,
+      VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+      VK_BLEND_OP_ADD,
+      VK_COLOR_COMPONENT_MASK_RGBA,
+  };
 
   VkPipelineColorBlendStateCreateInfo color_blend_state = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-      .attachmentCount = 1,
-      .pAttachments = &attachment_state};
+      VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO};
+  color_blend_state.attachmentCount = 1;
+  color_blend_state.pAttachments = &attachment_state;
 
   VkPipelineViewportStateCreateInfo viewport_state = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-      .viewportCount = 1,
-      .scissorCount = 1};
+      VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+  viewport_state.viewportCount = 1;
+  viewport_state.scissorCount = 1;
 
   VkPipelineMultisampleStateCreateInfo multisample_state = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-      .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT};
+      VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+  multisample_state.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
   VkDynamicState dynamic_states[2] = {VK_DYNAMIC_STATE_VIEWPORT,
                                       VK_DYNAMIC_STATE_SCISSOR};
 
   VkPipelineDynamicStateCreateInfo dynamic_state = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-      .pDynamicStates = dynamic_states,
-      .dynamicStateCount = 2};
+      VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+  dynamic_state.pDynamicStates = dynamic_states;
+  dynamic_state.dynamicStateCount = 2;
 
   VkPipelineShaderStageCreateInfo shader_stages[2] = {
       create_shader(adapter, nuklearshaders_nuklear_vert_spv,
@@ -335,120 +324,109 @@ void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
 
   VkVertexInputBindingDescription vertex_input_info[1] = {
       {
-          .binding = 0,
-          .stride = sizeof(struct nk_glfw_vertex),
-          .inputRate = VK_VERTEX_INPUT_RATE_VERTEX,
+          0,
+          sizeof(struct nk_glfw_vertex),
+          VK_VERTEX_INPUT_RATE_VERTEX,
       },
   };
 
   VkVertexInputAttributeDescription vertex_attribute_description[3] = {
       {
-          .binding = 0,
-          .location = 0,
-          .format = VK_FORMAT_R32G32_SFLOAT,
-          .offset = NK_OFFSETOF(struct nk_glfw_vertex, position),
+          0,
+          0,
+          VK_FORMAT_R32G32_SFLOAT,
+          NK_OFFSETOF(struct nk_glfw_vertex, position),
       },
       {
-          .binding = 0,
-          .location = 1,
-          .format = VK_FORMAT_R32G32_SFLOAT,
-          .offset = NK_OFFSETOF(struct nk_glfw_vertex, uv),
+          1,
+          0,
+          VK_FORMAT_R32G32_SFLOAT,
+          NK_OFFSETOF(struct nk_glfw_vertex, uv),
       },
       {
-          .binding = 0,
-          .location = 2,
-          .format = VK_FORMAT_R8G8B8A8_UINT,
-          .offset = NK_OFFSETOF(struct nk_glfw_vertex, col),
+          2,
+          0,
+          VK_FORMAT_R8G8B8A8_UINT,
+          NK_OFFSETOF(struct nk_glfw_vertex, col),
       },
   };
 
   VkPipelineVertexInputStateCreateInfo vertex_input = {
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-      .vertexBindingDescriptionCount = 1,
-      .pVertexBindingDescriptions = vertex_input_info,
-      .vertexAttributeDescriptionCount = 3,
-      .pVertexAttributeDescriptions = vertex_attribute_description,
-  };
+      VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
+  vertex_input.vertexBindingDescriptionCount = 1;
+  vertex_input.pVertexBindingDescriptions = vertex_input_info;
+  vertex_input.vertexAttributeDescriptionCount = 3;
+  vertex_input.pVertexAttributeDescriptions = vertex_attribute_description;
 
   VkGraphicsPipelineCreateInfo pipeline_info = {
-      .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-      .flags = 0,
-      .stageCount = 2,
-      .pStages = shader_stages,
-      .pVertexInputState = &vertex_input,
-      .pInputAssemblyState = &input_assembly_state,
-      .pViewportState = &viewport_state,
-      .pRasterizationState = &rasterization_state,
-      .pMultisampleState = &multisample_state,
-      .pColorBlendState = &color_blend_state,
-      .pDynamicState = &dynamic_state,
-      .layout = adapter->pipeline_layout,
-      .renderPass = adapter->render_pass,
-      .basePipelineIndex = -1,
-      .basePipelineHandle = VK_NULL_HANDLE,
-  };
+      VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO};
+  pipeline_info.flags = 0;
+  pipeline_info.stageCount = 2;
+  pipeline_info.pStages = shader_stages;
+  pipeline_info.pVertexInputState = &vertex_input;
+  pipeline_info.pInputAssemblyState = &input_assembly_state;
+  pipeline_info.pViewportState = &viewport_state;
+  pipeline_info.pRasterizationState = &rasterization_state;
+  pipeline_info.pMultisampleState = &multisample_state;
+  pipeline_info.pColorBlendState = &color_blend_state;
+  pipeline_info.pDynamicState = &dynamic_state;
+  pipeline_info.layout = adapter->pipeline_layout;
+  pipeline_info.renderPass = adapter->render_pass;
+  pipeline_info.basePipelineIndex = -1;
+  pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 
   VkResult result = vkCreateGraphicsPipelines(
       adapter->logical_device, VK_NULL_HANDLE, 1, &pipeline_info,
       VK_NULL_HANDLE, &adapter->pipeline);
+  assert(result == VK_SUCCESS);
 
   vkDestroyShaderModule(adapter->logical_device, shader_stages[0].module,
                         VK_NULL_HANDLE);
   vkDestroyShaderModule(adapter->logical_device, shader_stages[1].module,
                         VK_NULL_HANDLE);
-  assert(result == VK_SUCCESS);
 }
 
 void prepare_render_pass(struct nk_vulkan_adapter *adapter) {
   VkAttachmentDescription attachments[1] = {
-      {.format = adapter->color_format,
-       .samples = VK_SAMPLE_COUNT_1_BIT,
-       .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
-       .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-       .stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-       .stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
-       .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-       .finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
+      {0, adapter->color_format, VK_SAMPLE_COUNT_1_BIT,
+       VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE,
+       VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_DONT_CARE,
+       VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL},
   };
 
   VkAttachmentReference color_reference = {
-      .attachment = 0, .layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL};
+      0,
+      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+  };
 
   VkSubpassDependency subpass_dependencies[1] = {
       {
-          .srcSubpass = VK_SUBPASS_EXTERNAL,
-          .dstSubpass = 0,
-          .srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-          .dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-          .srcAccessMask = 0,
-          .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
-                           VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+          VK_SUBPASS_EXTERNAL,
+          0,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+          0,
+          VK_ACCESS_COLOR_ATTACHMENT_READ_BIT |
+              VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
       },
   };
 
   VkSubpassDescription subpass_description = {
-      .pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
-      .flags = 0,
-      .inputAttachmentCount = 0,
-      .pInputAttachments = NULL,
-      .colorAttachmentCount = 1,
-      .pColorAttachments = &color_reference,
-      .pResolveAttachments = NULL,
-      .pDepthStencilAttachment = VK_NULL_HANDLE,
-      .preserveAttachmentCount = 0,
-      .pPreserveAttachments = NULL,
+      0,    VK_PIPELINE_BIND_POINT_GRAPHICS,
+      0,    NULL,
+      1,    &color_reference,
+      NULL, VK_NULL_HANDLE,
+      0,    NULL,
   };
 
   VkRenderPassCreateInfo render_pass_info = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
-      .pNext = NULL,
-      .attachmentCount = 1,
-      .pAttachments = attachments,
-      .subpassCount = 1,
-      .pSubpasses = &subpass_description,
-      .dependencyCount = 1,
-      .pDependencies = subpass_dependencies,
-  };
+      VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
+  render_pass_info.attachmentCount = 1;
+  render_pass_info.pAttachments = attachments;
+  render_pass_info.subpassCount = 1;
+  render_pass_info.pSubpasses = &subpass_description;
+  render_pass_info.dependencyCount = 1;
+  render_pass_info.pDependencies = subpass_dependencies;
 
   assert(vkCreateRenderPass(adapter->logical_device, &render_pass_info, NULL,
                             &adapter->render_pass) == VK_SUCCESS);
@@ -456,12 +434,12 @@ void prepare_render_pass(struct nk_vulkan_adapter *adapter) {
 
 void prepare_framebuffers(struct nk_vulkan_adapter *adapter) {
   adapter->framebuffers =
-      malloc(adapter->image_views_len * sizeof(VkFramebuffer));
+      (VkFramebuffer *)malloc(adapter->image_views_len * sizeof(VkFramebuffer));
 
   size_t i;
   for (i = 0; i < adapter->image_views_len; i++) {
-    VkFramebufferCreateInfo framebufferCreateInfo = {};
-    framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    VkFramebufferCreateInfo framebufferCreateInfo = {
+        VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO};
     framebufferCreateInfo.renderPass = adapter->render_pass;
     framebufferCreateInfo.attachmentCount = 1;
     framebufferCreateInfo.pAttachments = &adapter->image_views[i];
@@ -477,11 +455,10 @@ void prepare_framebuffers(struct nk_vulkan_adapter *adapter) {
 
 void prepare_command_buffers(struct nk_vulkan_adapter *adapter) {
   VkCommandBufferAllocateInfo allocate_info = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-      .commandPool = adapter->command_pool,
-      .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-      .commandBufferCount = 1,
-  };
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  allocate_info.commandPool = adapter->command_pool;
+  allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+  allocate_info.commandBufferCount = 1;
 
   assert(vkAllocateCommandBuffers(adapter->logical_device, &allocate_info,
                                   adapter->command_buffers) == VK_SUCCESS);
@@ -490,7 +467,7 @@ void prepare_command_buffers(struct nk_vulkan_adapter *adapter) {
 
 void prepare_semaphores(struct nk_vulkan_adapter *adapter) {
   VkSemaphoreCreateInfo semaphore_info = {
-      .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+      VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
   };
   assert(vkCreateSemaphore(adapter->logical_device, &semaphore_info,
                            VK_NULL_HANDLE,
@@ -519,12 +496,10 @@ uint32_t find_memory_index(VkPhysicalDevice physical_device,
 void create_buffer_and_memory(struct nk_vulkan_adapter *adapter,
                               VkBuffer *buffer, VkBufferUsageFlags usage,
                               VkDeviceMemory *memory, VkDeviceSize size) {
-  VkBufferCreateInfo buffer_info = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-      .size = size,
-      .usage = usage,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-  };
+  VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  buffer_info.size = size;
+  buffer_info.usage = usage;
+  buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
   assert(vkCreateBuffer(adapter->logical_device, &buffer_info, VK_NULL_HANDLE,
                         buffer) == VK_SUCCESS);
@@ -532,14 +507,12 @@ void create_buffer_and_memory(struct nk_vulkan_adapter *adapter,
   VkMemoryRequirements mem_reqs;
   vkGetBufferMemoryRequirements(adapter->logical_device, *buffer, &mem_reqs);
 
-  VkMemoryAllocateInfo alloc_info = {
-      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      .allocationSize = mem_reqs.size,
-      .memoryTypeIndex =
-          find_memory_index(adapter->physical_device, mem_reqs.memoryTypeBits,
-                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT),
-  };
+  VkMemoryAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  alloc_info.allocationSize = mem_reqs.size;
+  alloc_info.memoryTypeIndex =
+      find_memory_index(adapter->physical_device, mem_reqs.memoryTypeBits,
+                        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
   assert(vkAllocateMemory(adapter->logical_device, &alloc_info, VK_NULL_HANDLE,
                           memory) == VK_SUCCESS);
@@ -580,8 +553,8 @@ void cleanup_render_resources(struct nk_vulkan_adapter *adapter) {
 
 void create_command_pool(struct nk_vulkan_adapter *adapter,
                          uint32_t graphics_queue_family_index) {
-  VkCommandPoolCreateInfo pool_info = {};
-  pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+  VkCommandPoolCreateInfo pool_info = {
+      VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
   pool_info.queueFamilyIndex = graphics_queue_family_index;
   pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
   assert(vkCreateCommandPool(adapter->logical_device, &pool_info,
@@ -606,7 +579,8 @@ NK_API void nk_glfw3_device_create(VkDevice logical_device,
   adapter->color_format = color_format;
   adapter->framebuffers = NULL;
   adapter->framebuffers_len = 0;
-  adapter->command_buffers = malloc(image_views_len * sizeof(VkCommandBuffer));
+  adapter->command_buffers =
+      (VkCommandBuffer *)malloc(image_views_len * sizeof(VkCommandBuffer));
 
   prepare_semaphores(adapter);
 
@@ -726,24 +700,18 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
                                             int height) {
   struct nk_vulkan_adapter *adapter = &glfw.adapter;
 
-  VkImageCreateInfo image_info = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-      .imageType = VK_IMAGE_TYPE_2D,
-      .format = VK_FORMAT_R8G8B8A8_UNORM,
-      .extent =
-          {
-              .width = width,
-              .height = height,
-              .depth = 1,
-          },
-      .mipLevels = 1,
-      .arrayLayers = 1,
-      .samples = VK_SAMPLE_COUNT_1_BIT,
-      .tiling = VK_IMAGE_TILING_OPTIMAL,
-      .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-      .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-  };
+  VkImageCreateInfo image_info = {VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO};
+  image_info.imageType = VK_IMAGE_TYPE_2D;
+  image_info.format = VK_FORMAT_R8G8B8A8_UNORM;
+  image_info.extent = (VkExtent3D){(uint32_t)width, (uint32_t)height, 1};
+  image_info.mipLevels = 1;
+  image_info.arrayLayers = 1;
+  image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+  image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+  image_info.usage =
+      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+  image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
   VkResult result = vkCreateImage(adapter->logical_device, &image_info,
                                   VK_NULL_HANDLE, &adapter->font_image);
@@ -752,13 +720,11 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
   VkMemoryRequirements mem_reqs;
   vkGetImageMemoryRequirements(adapter->logical_device, adapter->font_image,
                                &mem_reqs);
-  VkMemoryAllocateInfo alloc_info = {
-      .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-      .allocationSize = mem_reqs.size,
-      .memoryTypeIndex =
-          find_memory_index(adapter->physical_device, mem_reqs.memoryTypeBits,
-                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
-  };
+  VkMemoryAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  alloc_info.allocationSize = mem_reqs.size;
+  alloc_info.memoryTypeIndex =
+      find_memory_index(adapter->physical_device, mem_reqs.memoryTypeBits,
+                        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
   assert(vkAllocateMemory(adapter->logical_device, &alloc_info, VK_NULL_HANDLE,
                           &adapter->font_memory) == VK_SUCCESS);
@@ -770,12 +736,10 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
     VkBuffer buffer;
   } staging_buffer;
 
-  VkBufferCreateInfo buffer_info = {
-      .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-      .size = alloc_info.allocationSize,
-      .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-      .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-  };
+  VkBufferCreateInfo buffer_info = {VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  buffer_info.size = alloc_info.allocationSize;
+  buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+  buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
   assert(vkCreateBuffer(adapter->logical_device, &buffer_info, VK_NULL_HANDLE,
                         &staging_buffer.buffer) == VK_SUCCESS);
@@ -803,46 +767,45 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
   // use the same command buffer as for render as we are regenerating the buffer
   // during render anyway
   VkCommandBufferBeginInfo begin_info = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
-  };
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
 
   // TODO: kill array
   VkCommandBuffer command_buffer = adapter->command_buffers[0];
   assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS);
 
   VkImageMemoryBarrier image_memory_barrier = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-      .image = adapter->font_image,
-      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-      .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-      .subresourceRange =
-          {
-              .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-              .levelCount = 1,
-              .layerCount = 1,
-          },
-      .dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-  };
+      VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+  image_memory_barrier.image = adapter->font_image;
+  image_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  image_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  image_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+  image_memory_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  image_memory_barrier.subresourceRange =
+      (VkImageSubresourceRange){
+          VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1,
+      },
+  image_memory_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
   vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                        VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, VK_NULL_HANDLE, 0,
                        VK_NULL_HANDLE, 1, &image_memory_barrier);
 
   VkBufferImageCopy buffer_copy_region = {
-      .imageSubresource =
-          {
-              .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-              .mipLevel = 0,
-              .layerCount = 1,
-          },
-      .imageExtent =
-          {
-              .width = width,
-              .height = height,
-              .depth = 1,
-          },
+      0,
+      0,
+      0,
+      {
+          VK_IMAGE_ASPECT_COLOR_BIT,
+          0,
+          0,
+          1,
+      },
+      {0, 0, 0},
+      {
+          (uint32_t)width,
+          (uint32_t)height,
+          1,
+      },
   };
 
   vkCmdCopyBufferToImage(
@@ -850,21 +813,19 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &buffer_copy_region);
 
   VkImageMemoryBarrier image_shader_memory_barrier = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-      .image = adapter->font_image,
-      .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-      .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-      .newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-      .subresourceRange =
-          {
-              .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-              .levelCount = 1,
-              .layerCount = 1,
-          },
-      .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
-      .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
-  };
+      VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
+  image_shader_memory_barrier.image = adapter->font_image;
+  image_shader_memory_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  image_shader_memory_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+  image_shader_memory_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+  image_shader_memory_barrier.newLayout =
+      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+  image_shader_memory_barrier.subresourceRange =
+      (VkImageSubresourceRange){
+          VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1,
+      },
+  image_shader_memory_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+  image_shader_memory_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
 
   vkCmdPipelineBarrier(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
                        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0,
@@ -873,11 +834,9 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
 
   assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);
 
-  VkSubmitInfo submitInfo = {
-      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-      .commandBufferCount = 1,
-      .pCommandBuffers = &command_buffer,
-  };
+  VkSubmitInfo submitInfo = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  submitInfo.commandBufferCount = 1;
+  submitInfo.pCommandBuffers = &command_buffer;
 
   assert(vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) ==
          VK_SUCCESS);
@@ -888,33 +847,31 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
                   VK_NULL_HANDLE);
 
   VkImageViewCreateInfo image_view_info = {
-      .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-      .image = adapter->font_image,
-      .viewType = VK_IMAGE_VIEW_TYPE_2D,
-      .format = image_info.format,
-      .subresourceRange = {VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1},
-  };
+      VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
+  image_view_info.image = adapter->font_image;
+  image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  image_view_info.format = image_info.format;
+  image_view_info.subresourceRange =
+      (VkImageSubresourceRange){VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
   assert(vkCreateImageView(adapter->logical_device, &image_view_info,
                            VK_NULL_HANDLE,
                            &adapter->font_image_view) == VK_SUCCESS);
 
-  VkSamplerCreateInfo sampler_info = {
-      .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
-      .maxAnisotropy = 1.0,
-      .magFilter = VK_FILTER_LINEAR,
-      .minFilter = VK_FILTER_LINEAR,
-      .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
-      .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-      .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-      .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
-      .mipLodBias = 0.0f,
-      .compareEnable = VK_FALSE,
-      .compareOp = VK_COMPARE_OP_ALWAYS,
-      .minLod = 0.0f,
-      .maxLod = 0.0f,
-      .borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK,
-  };
+  VkSamplerCreateInfo sampler_info = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
+  sampler_info.maxAnisotropy = 1.0;
+  sampler_info.magFilter = VK_FILTER_LINEAR;
+  sampler_info.minFilter = VK_FILTER_LINEAR;
+  sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  sampler_info.mipLodBias = 0.0f;
+  sampler_info.compareEnable = VK_FALSE;
+  sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
+  sampler_info.minLod = 0.0f;
+  sampler_info.maxLod = 0.0f;
+  sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 
   assert(vkCreateSampler(adapter->logical_device, &sampler_info, VK_NULL_HANDLE,
                          &adapter->font_tex) == VK_SUCCESS);
@@ -1048,7 +1005,6 @@ NK_API
 VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
                             uint32_t buffer_index, VkSemaphore wait_semaphore) {
   struct nk_vulkan_adapter *adapter = &glfw.adapter;
-  struct GLFWwindow *win = glfw.win;
   struct nk_buffer vbuf, ebuf;
 
   struct Mat4f projection = (struct Mat4f){
@@ -1065,34 +1021,28 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
   vkUnmapMemory(adapter->logical_device, adapter->uniform_memory);
 
   VkCommandBufferBeginInfo begin_info = {
-      .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+      VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
   };
 
-  VkClearColorValue clear_color_value = {0.0f, 0.0f, 0.0f, 0.0f};
-
-  VkClearValue clear_value = {};
-  clear_value.color = clear_color_value;
+  VkClearValue clear_value = {{{0.0f, 0.0f, 0.0f, 0.0f}}};
 
   VkRenderPassBeginInfo renderPassBeginInfo = {
-      .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
-      .renderPass = adapter->render_pass,
-      .renderArea =
+      VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO};
+  renderPassBeginInfo.renderPass = adapter->render_pass;
+  renderPassBeginInfo.renderArea =
+      (VkRect2D){
           {
-              .offset =
-                  {
-                      .x = 0,
-                      .y = 0,
-                  },
-              .extent =
-                  {
-                      .width = adapter->width,
-                      .height = adapter->height,
-                  },
+              0,
+              0,
           },
-      .clearValueCount = 1,
-      .pClearValues = &clear_value,
-      .framebuffer = adapter->framebuffers[buffer_index],
-  };
+          {
+              adapter->width,
+              adapter->height,
+          },
+      },
+  renderPassBeginInfo.clearValueCount = 1;
+  renderPassBeginInfo.pClearValues = &clear_value;
+  renderPassBeginInfo.framebuffer = adapter->framebuffers[buffer_index];
 
   VkCommandBuffer command_buffer = adapter->command_buffers[0];
 
@@ -1101,10 +1051,7 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
                        VK_SUBPASS_CONTENTS_INLINE);
 
   VkViewport viewport = {
-      .width = (float)adapter->width,
-      .height = (float)adapter->height,
-      .minDepth = 0.0f,
-      .maxDepth = 1.0f,
+      0.f, 0.f, (float)adapter->width, (float)adapter->height, 0.0f, 1.0f,
   };
   vkCmdSetViewport(command_buffer, 0, 1, &viewport);
 
@@ -1166,15 +1113,16 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
       if (!cmd->elem_count)
         continue;
 
-      VkRect2D scissor = {.extent =
-                              {
-                                  .width = cmd->clip_rect.w * glfw.fb_scale.x,
-                                  .height = cmd->clip_rect.h * glfw.fb_scale.y,
-                              },
-                          .offset = {
-                              .x = MAX(cmd->clip_rect.x * glfw.fb_scale.x, 0),
-                              .y = MAX(cmd->clip_rect.y * glfw.fb_scale.y, 0),
-                          }};
+      VkRect2D scissor = {
+          {
+              (int32_t)(NK_MAX(cmd->clip_rect.x * glfw.fb_scale.x, 0.f)),
+              (int32_t)(NK_MAX(cmd->clip_rect.y * glfw.fb_scale.y, 0.f)),
+          },
+          {
+              (uint32_t)(cmd->clip_rect.w * glfw.fb_scale.x),
+              (uint32_t)(cmd->clip_rect.h * glfw.fb_scale.y),
+          },
+      };
       vkCmdSetScissor(command_buffer, 0, 1, &scissor);
       vkCmdDrawIndexed(command_buffer, cmd->elem_count, 1, index_offset, 0, 0);
       index_offset += cmd->elem_count;
@@ -1197,16 +1145,14 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
 
   VkPipelineStageFlags wait_stages[1] = {
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-  VkSubmitInfo submit_info = {
-      .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
-      .commandBufferCount = 1,
-      .pCommandBuffers = &command_buffer,
-      .pWaitDstStageMask = wait_stages,
-      .waitSemaphoreCount = wait_semaphore_count,
-      .pWaitSemaphores = wait_semaphores,
-      .signalSemaphoreCount = 1,
-      .pSignalSemaphores = &adapter->render_completed,
-  };
+  VkSubmitInfo submit_info = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = &command_buffer;
+  submit_info.pWaitDstStageMask = wait_stages;
+  submit_info.waitSemaphoreCount = wait_semaphore_count;
+  submit_info.pWaitSemaphores = wait_semaphores;
+  submit_info.signalSemaphoreCount = 1;
+  submit_info.pSignalSemaphores = &adapter->render_completed;
 
   assert(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) ==
          VK_SUCCESS);
