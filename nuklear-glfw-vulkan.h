@@ -144,8 +144,9 @@ VkPipelineShaderStageCreateInfo create_shader(struct nk_vulkan_adapter *adapter,
   create_info.codeSize = size;
   create_info.pCode = (const uint32_t *)spv_shader;
   VkShaderModule module = VK_NULL_HANDLE;
-  assert(vkCreateShaderModule(adapter->logical_device, &create_info, NULL,
-                              &module) == VK_SUCCESS);
+  VkResult result = vkCreateShaderModule(adapter->logical_device, &create_info,
+                                         NULL, &module);
+  NK_ASSERT(result == VK_SUCCESS);
 
   VkPipelineShaderStageCreateInfo shader_info = {
       VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
@@ -173,9 +174,10 @@ void prepare_descriptor_pool(struct nk_vulkan_adapter *adapter) {
   pool_info.pPoolSizes = pool_sizes;
   pool_info.maxSets = 1;
 
-  assert(vkCreateDescriptorPool(adapter->logical_device, &pool_info,
-                                VK_NULL_HANDLE,
-                                &adapter->descriptor_pool) == VK_SUCCESS);
+  VkResult result =
+      vkCreateDescriptorPool(adapter->logical_device, &pool_info,
+                             VK_NULL_HANDLE, &adapter->descriptor_pool);
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 void prepare_descriptor_set_layout(struct nk_vulkan_adapter *adapter) {
@@ -199,9 +201,11 @@ void prepare_descriptor_set_layout(struct nk_vulkan_adapter *adapter) {
   descriptor_set_info.bindingCount = 2;
   descriptor_set_info.pBindings = bindings;
 
-  assert(vkCreateDescriptorSetLayout(
-             adapter->logical_device, &descriptor_set_info, NULL,
-             &adapter->descriptor_set_layout) == VK_SUCCESS);
+  VkResult result =
+      vkCreateDescriptorSetLayout(adapter->logical_device, &descriptor_set_info,
+                                  NULL, &adapter->descriptor_set_layout);
+
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 void prepare_descriptor_set(struct nk_vulkan_adapter *adapter) {
@@ -211,8 +215,9 @@ void prepare_descriptor_set(struct nk_vulkan_adapter *adapter) {
   allocate_info.descriptorSetCount = 1;
   allocate_info.pSetLayouts = &adapter->descriptor_set_layout;
 
-  assert(vkAllocateDescriptorSets(adapter->logical_device, &allocate_info,
-                                  &adapter->descriptor_set) == VK_SUCCESS);
+  VkResult result = vkAllocateDescriptorSets(
+      adapter->logical_device, &allocate_info, &adapter->descriptor_set);
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 void write_font_descriptor_set(struct nk_vulkan_adapter *adapter) {
@@ -264,8 +269,10 @@ void prepare_pipeline_layout(struct nk_vulkan_adapter *adapter) {
   pipeline_layout_info.setLayoutCount = 1;
   pipeline_layout_info.pSetLayouts = &adapter->descriptor_set_layout;
 
-  assert(vkCreatePipelineLayout(adapter->logical_device, &pipeline_layout_info,
-                                NULL, &adapter->pipeline_layout) == VK_SUCCESS);
+  VkResult result =
+      (vkCreatePipelineLayout(adapter->logical_device, &pipeline_layout_info,
+                              NULL, &adapter->pipeline_layout));
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
@@ -378,7 +385,7 @@ void prepare_pipeline(struct nk_vulkan_adapter *adapter) {
   VkResult result = vkCreateGraphicsPipelines(
       adapter->logical_device, VK_NULL_HANDLE, 1, &pipeline_info,
       VK_NULL_HANDLE, &adapter->pipeline);
-  assert(result == VK_SUCCESS);
+  NK_ASSERT(result == VK_SUCCESS);
 
   vkDestroyShaderModule(adapter->logical_device, shader_stages[0].module,
                         VK_NULL_HANDLE);
@@ -428,8 +435,9 @@ void prepare_render_pass(struct nk_vulkan_adapter *adapter) {
   render_pass_info.dependencyCount = 1;
   render_pass_info.pDependencies = subpass_dependencies;
 
-  assert(vkCreateRenderPass(adapter->logical_device, &render_pass_info, NULL,
-                            &adapter->render_pass) == VK_SUCCESS);
+  VkResult result = vkCreateRenderPass(
+      adapter->logical_device, &render_pass_info, NULL, &adapter->render_pass);
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 void prepare_framebuffers(struct nk_vulkan_adapter *adapter) {
@@ -447,8 +455,10 @@ void prepare_framebuffers(struct nk_vulkan_adapter *adapter) {
     framebufferCreateInfo.height = adapter->height;
     framebufferCreateInfo.layers = 1;
 
-    assert(vkCreateFramebuffer(adapter->logical_device, &framebufferCreateInfo,
-                               NULL, &adapter->framebuffers[i]) == VK_SUCCESS);
+    VkResult result =
+        (vkCreateFramebuffer(adapter->logical_device, &framebufferCreateInfo,
+                             NULL, &adapter->framebuffers[i]));
+    NK_ASSERT(result == VK_SUCCESS);
   }
   adapter->framebuffers_len = adapter->image_views_len;
 }
@@ -460,8 +470,9 @@ void prepare_command_buffers(struct nk_vulkan_adapter *adapter) {
   allocate_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
   allocate_info.commandBufferCount = 1;
 
-  assert(vkAllocateCommandBuffers(adapter->logical_device, &allocate_info,
-                                  adapter->command_buffers) == VK_SUCCESS);
+  VkResult result = vkAllocateCommandBuffers(
+      adapter->logical_device, &allocate_info, adapter->command_buffers);
+  NK_ASSERT(result == VK_SUCCESS);
   adapter->command_buffers_len = 1;
 }
 
@@ -469,9 +480,10 @@ void prepare_semaphores(struct nk_vulkan_adapter *adapter) {
   VkSemaphoreCreateInfo semaphore_info = {
       VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
   };
-  assert(vkCreateSemaphore(adapter->logical_device, &semaphore_info,
-                           VK_NULL_HANDLE,
-                           &adapter->render_completed) == VK_SUCCESS);
+  VkResult result =
+      (vkCreateSemaphore(adapter->logical_device, &semaphore_info,
+                         VK_NULL_HANDLE, &adapter->render_completed));
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 uint32_t find_memory_index(VkPhysicalDevice physical_device,
@@ -501,8 +513,10 @@ void create_buffer_and_memory(struct nk_vulkan_adapter *adapter,
   buffer_info.usage = usage;
   buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-  assert(vkCreateBuffer(adapter->logical_device, &buffer_info, VK_NULL_HANDLE,
-                        buffer) == VK_SUCCESS);
+  VkResult result;
+  result = vkCreateBuffer(adapter->logical_device, &buffer_info, VK_NULL_HANDLE,
+                          buffer);
+  NK_ASSERT(result == VK_SUCCESS);
 
   VkMemoryRequirements mem_reqs;
   vkGetBufferMemoryRequirements(adapter->logical_device, *buffer, &mem_reqs);
@@ -514,10 +528,11 @@ void create_buffer_and_memory(struct nk_vulkan_adapter *adapter,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-  assert(vkAllocateMemory(adapter->logical_device, &alloc_info, VK_NULL_HANDLE,
-                          memory) == VK_SUCCESS);
-  assert(vkBindBufferMemory(adapter->logical_device, *buffer, *memory, 0) ==
-         VK_SUCCESS);
+  result = vkAllocateMemory(adapter->logical_device, &alloc_info,
+                            VK_NULL_HANDLE, memory);
+  NK_ASSERT(result == VK_SUCCESS);
+  result = vkBindBufferMemory(adapter->logical_device, *buffer, *memory, 0);
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 void create_render_resources(struct nk_vulkan_adapter *adapter) {
@@ -557,9 +572,10 @@ void create_command_pool(struct nk_vulkan_adapter *adapter,
       VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
   pool_info.queueFamilyIndex = graphics_queue_family_index;
   pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-  assert(vkCreateCommandPool(adapter->logical_device, &pool_info,
-                             VK_NULL_HANDLE,
-                             &adapter->command_pool) == VK_SUCCESS);
+  VkResult result =
+      (vkCreateCommandPool(adapter->logical_device, &pool_info, VK_NULL_HANDLE,
+                           &adapter->command_pool));
+  NK_ASSERT(result == VK_SUCCESS);
 }
 
 NK_API void nk_glfw3_device_create(VkDevice logical_device,
@@ -726,10 +742,12 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
       find_memory_index(adapter->physical_device, mem_reqs.memoryTypeBits,
                         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-  assert(vkAllocateMemory(adapter->logical_device, &alloc_info, VK_NULL_HANDLE,
-                          &adapter->font_memory) == VK_SUCCESS);
-  assert(vkBindImageMemory(adapter->logical_device, adapter->font_image,
-                           adapter->font_memory, 0) == VK_SUCCESS);
+  result = vkAllocateMemory(adapter->logical_device, &alloc_info,
+                            VK_NULL_HANDLE, &adapter->font_memory);
+  NK_ASSERT(result == VK_SUCCESS);
+  result = vkBindImageMemory(adapter->logical_device, adapter->font_image,
+                             adapter->font_memory, 0);
+  NK_ASSERT(result == VK_SUCCESS);
 
   struct {
     VkDeviceMemory memory;
@@ -741,8 +759,9 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
   buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
   buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-  assert(vkCreateBuffer(adapter->logical_device, &buffer_info, VK_NULL_HANDLE,
-                        &staging_buffer.buffer) == VK_SUCCESS);
+  result = vkCreateBuffer(adapter->logical_device, &buffer_info, VK_NULL_HANDLE,
+                          &staging_buffer.buffer);
+  NK_ASSERT(result == VK_SUCCESS);
   vkGetBufferMemoryRequirements(adapter->logical_device, staging_buffer.buffer,
                                 &mem_reqs);
 
@@ -752,15 +771,17 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                             VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-  assert(vkAllocateMemory(adapter->logical_device, &alloc_info, VK_NULL_HANDLE,
-                          &staging_buffer.memory) == VK_SUCCESS);
-  assert(vkBindBufferMemory(adapter->logical_device, staging_buffer.buffer,
-                            staging_buffer.memory, 0) == VK_SUCCESS);
+  result = vkAllocateMemory(adapter->logical_device, &alloc_info,
+                            VK_NULL_HANDLE, &staging_buffer.memory);
+  NK_ASSERT(result == VK_SUCCESS);
+  result = vkBindBufferMemory(adapter->logical_device, staging_buffer.buffer,
+                              staging_buffer.memory, 0);
+  NK_ASSERT(result == VK_SUCCESS);
 
   uint8_t *data = 0;
-  assert(vkMapMemory(adapter->logical_device, staging_buffer.memory, 0,
-                     alloc_info.allocationSize, 0,
-                     (void **)&data) == VK_SUCCESS);
+  result = vkMapMemory(adapter->logical_device, staging_buffer.memory, 0,
+                       alloc_info.allocationSize, 0, (void **)&data);
+  NK_ASSERT(result == VK_SUCCESS);
   memcpy(data, image, width * height * 4);
   vkUnmapMemory(adapter->logical_device, staging_buffer.memory);
 
@@ -771,7 +792,8 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
 
   // TODO: kill array
   VkCommandBuffer command_buffer = adapter->command_buffers[0];
-  assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS);
+  result = vkBeginCommandBuffer(command_buffer, &begin_info);
+  NK_ASSERT(result == VK_SUCCESS);
 
   VkImageMemoryBarrier image_memory_barrier = {
       VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
@@ -832,15 +854,17 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
                        VK_NULL_HANDLE, 0, VK_NULL_HANDLE, 1,
                        &image_shader_memory_barrier);
 
-  assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);
+  result = vkEndCommandBuffer(command_buffer);
+  NK_ASSERT(result == VK_SUCCESS);
 
   VkSubmitInfo submitInfo = {VK_STRUCTURE_TYPE_SUBMIT_INFO};
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &command_buffer;
 
-  assert(vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) ==
-         VK_SUCCESS);
-  assert(vkQueueWaitIdle(graphics_queue) == VK_SUCCESS);
+  result = vkQueueSubmit(graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+  NK_ASSERT(result == VK_SUCCESS);
+  result = vkQueueWaitIdle(graphics_queue);
+  NK_ASSERT(result == VK_SUCCESS);
 
   vkFreeMemory(adapter->logical_device, staging_buffer.memory, VK_NULL_HANDLE);
   vkDestroyBuffer(adapter->logical_device, staging_buffer.buffer,
@@ -854,9 +878,9 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
   image_view_info.subresourceRange =
       (VkImageSubresourceRange){VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1};
 
-  assert(vkCreateImageView(adapter->logical_device, &image_view_info,
-                           VK_NULL_HANDLE,
-                           &adapter->font_image_view) == VK_SUCCESS);
+  result = vkCreateImageView(adapter->logical_device, &image_view_info,
+                             VK_NULL_HANDLE, &adapter->font_image_view);
+  NK_ASSERT(result == VK_SUCCESS);
 
   VkSamplerCreateInfo sampler_info = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
   sampler_info.maxAnisotropy = 1.0;
@@ -873,8 +897,9 @@ NK_INTERN void nk_glfw3_device_upload_atlas(VkQueue graphics_queue,
   sampler_info.maxLod = 0.0f;
   sampler_info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 
-  assert(vkCreateSampler(adapter->logical_device, &sampler_info, VK_NULL_HANDLE,
-                         &adapter->font_tex) == VK_SUCCESS);
+  result = vkCreateSampler(adapter->logical_device, &sampler_info,
+                           VK_NULL_HANDLE, &adapter->font_tex);
+  NK_ASSERT(result == VK_SUCCESS);
 
   write_font_descriptor_set(adapter);
 }
@@ -1046,7 +1071,8 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
 
   VkCommandBuffer command_buffer = adapter->command_buffers[0];
 
-  assert(vkBeginCommandBuffer(command_buffer, &begin_info) == VK_SUCCESS);
+  VkResult result = vkBeginCommandBuffer(command_buffer, &begin_info);
+  NK_ASSERT(result == VK_SUCCESS);
   vkCmdBeginRenderPass(command_buffer, &renderPassBeginInfo,
                        VK_SUBPASS_CONTENTS_INLINE);
 
@@ -1131,7 +1157,8 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
   }
 
   vkCmdEndRenderPass(command_buffer);
-  assert(vkEndCommandBuffer(command_buffer) == VK_SUCCESS);
+  result = vkEndCommandBuffer(command_buffer);
+  NK_ASSERT(result == VK_SUCCESS);
 
   uint32_t wait_semaphore_count;
   VkSemaphore *wait_semaphores;
@@ -1154,9 +1181,10 @@ VkSemaphore nk_glfw3_render(enum nk_anti_aliasing AA, VkQueue graphics_queue,
   submit_info.signalSemaphoreCount = 1;
   submit_info.pSignalSemaphores = &adapter->render_completed;
 
-  assert(vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) ==
-         VK_SUCCESS);
-  assert(vkQueueWaitIdle(graphics_queue) == VK_SUCCESS);
+  result = vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+  NK_ASSERT(result == VK_SUCCESS);
+  result = vkQueueWaitIdle(graphics_queue);
+  NK_ASSERT(result == VK_SUCCESS);
 
   return adapter->render_completed;
 }
